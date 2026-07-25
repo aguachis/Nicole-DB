@@ -8,11 +8,13 @@ Definicion inicial para base nueva.
 
 - `docs/db/stored-procedures/auth/P_Auth_Register.sql`
 - `docs/db/stored-procedures/auth/P_Auth_Login.sql`
+- `docs/db/stored-procedures/auth/P_Auth_GetSessionContext.sql`
 
 ## Objetivos
 
 Permitir el registro inicial de usuario y empresa en una sola transaccion.
 Consultar por email el `UserId` y `PasswordHash` necesarios para que el backend valide el login.
+Consultar por `UserId` el contexto completo de sesion: usuario, empresa, perfil y permisos.
 
 ## Flujo
 

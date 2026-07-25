@@ -119,3 +119,15 @@ BEGIN
     INCLUDE (CompanyEmissionPointId, EmissionPointCode, Name);
 END;
 GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Client')
+      AND name = N'IX_Client_Company_Status'
+)
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_Client_Company_Status
+    ON dbo.Client (CompanyId, Status)
+    INCLUDE (ClientId, PersonId, Identification, BusinessName);
+END;
+GO
