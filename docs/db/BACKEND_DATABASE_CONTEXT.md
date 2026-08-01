@@ -20,19 +20,20 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 2. `docs/db/entities/identification-type/00-create-table-identificationType.sql`
 3. `docs/db/entities/person-type/00-create-table-persontype.sql`
 4. `docs/db/entities/00-seed-base-catalogs.sql`
-5. `docs/db/entities/person/00-create-table-person.sql`
-6. `docs/db/entities/company/00-create-table-company.sql`
-7. `docs/db/entities/company-branch/00-create-table-company-branch.sql`
-8. `docs/db/entities/company-emission-point/00-create-table-company-emission-point.sql`
-9. `docs/db/entities/app-user/00-create-table-appuser.sql`
-10. `docs/db/entities/profile/00-create-table-profile.sql`
-11. `docs/db/entities/permission/00-create-table-permission.sql`
-12. `docs/db/entities/permission/01-seed-base-permissions.sql`
-13. `docs/db/entities/profile-permission/00-create-table-profile-permission.sql`
-14. `docs/db/entities/user-company/00-create-table-user-company.sql`
-15. `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql`
-16. `docs/db/stored-procedures/auth/P_Auth_Register.sql`
-17. `docs/db/05-recommended-indexes.sql`
+5. `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql`
+6. `docs/db/entities/person/00-create-table-person.sql`
+7. `docs/db/entities/company/00-create-table-company.sql`
+8. `docs/db/entities/company-branch/00-create-table-company-branch.sql`
+9. `docs/db/entities/company-emission-point/00-create-table-company-emission-point.sql`
+10. `docs/db/entities/app-user/00-create-table-appuser.sql`
+11. `docs/db/entities/profile/00-create-table-profile.sql`
+12. `docs/db/entities/permission/00-create-table-permission.sql`
+13. `docs/db/entities/permission/01-seed-base-permissions.sql`
+14. `docs/db/entities/profile-permission/00-create-table-profile-permission.sql`
+15. `docs/db/entities/user-company/00-create-table-user-company.sql`
+16. `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql`
+17. `docs/db/stored-procedures/auth/P_Auth_Register.sql`
+18. `docs/db/05-recommended-indexes.sql`
 
 ## Tablas Vigentes
 
@@ -57,6 +58,7 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 | Script | Tipo | Uso |
 | --- | --- | --- |
 | `docs/db/entities/00-seed-base-catalogs.sql` | Seed obligatorio | Crea `EntityStatus`, `IdentificationType` y `PersonType` base. |
+| `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql` | Consulta catalogos | Expone `STATUS`, `IDENTIFICATION` y `PERSON_TYPE` para selects. |
 | `docs/db/entities/permission/01-seed-base-permissions.sql` | Seed obligatorio | Crea permisos base para administracion inicial. |
 | `docs/db/entities/01-insert-mock-data.sql` | Seed de pruebas | Crea datos mock y asigna todos los permisos base al perfil `ADMIN`. |
 | `docs/db/05-recommended-indexes.sql` | Optimizacion recomendada | Crea indices para login, selector de empresa y permisos efectivos. |
@@ -92,6 +94,7 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 | Stored Procedure | Proposito | Script |
 | --- | --- | --- |
 | `dbo.P_Auth_Register` | Registra persona, usuario, empresa, sucursal, punto de emision, relacion usuario-empresa, perfil `ADMIN` y permisos base en una transaccion. | `docs/db/stored-procedures/auth/P_Auth_Register.sql` |
+| `dbo.P_Catalog_Lookup` | Consulta catalogos comunes para selects de UI con clave funcional estable. | `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql` |
 
 ## Regla de Autorizacion
 

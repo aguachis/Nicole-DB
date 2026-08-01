@@ -28,6 +28,8 @@ Cubrir el mantenimiento de perfiles por empresa y la asignacion de permisos a ca
 - `docs/db/stored-procedures/profile/P_Profile_Update.sql`
 - `docs/db/stored-procedures/profile/P_Profile_Deactivate.sql`
 - `docs/db/stored-procedures/profile/P_ProfilePermission_ReplaceByProfile.sql`
+- `docs/db/stored-procedures/profile/P_UserCompanyProfile_Assign.sql`
+- `docs/db/stored-procedures/profile/P_UserCompanyProfile_Revoke.sql`
 
 ## Regla importante
 
@@ -45,3 +47,14 @@ Cubrir el mantenimiento de perfiles por empresa y la asignacion de permisos a ca
 - `Permission` se trata como catalogo global de solo lectura en esta etapa.
 - La asignacion de permisos usa un TVP `dbo.PermissionCodeListType` para evitar payloads ambiguos dentro de SQL Server.
 - `P_ProfilePermission_ReplaceByProfile` reactiva, inserta o inactiva relaciones segun el set final recibido.
+
+## Nomenclatura y ubicacion de SP
+
+- Dominio auth (`docs/db/stored-procedures/auth/`): prefijo `P_User_` para mantenimiento de usuario.
+- Dominio profile (`docs/db/stored-procedures/profile/`): prefijo `P_UserCompanyProfile_` para asignacion/revocacion por empresa.
+- Operaciones de asignacion deben validar usuario activo, pertenencia `UserCompany` activa y perfil activo de la misma empresa.
+
+## Matriz minima de validaciones en asignacion de perfiles
+
+- `P_UserCompanyProfile_Assign`: valida `CompanyId`, `UserId`, `ProfileId`, `Actor`, pertenencia activa y perfil activo; inserta, reactiva o retorna no-op.
+- `P_UserCompanyProfile_Revoke`: valida `CompanyId`, `UserId`, `ProfileId`, `Actor` y pertenencia activa; inactiva o retorna no-op idempotente.

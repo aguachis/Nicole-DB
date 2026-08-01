@@ -16,6 +16,10 @@ Script: `docs/db/stored-procedures/auth/P_Auth_Register.sql`
 
 SP: `dbo.P_Auth_Register`
 
+## Referencias complementarias
+
+- `docs/db/integrations/INTEGRACION_API_CATALOG_LOOKUPS.md`
+
 ## Clases C# Sugeridas
 
 ### Request

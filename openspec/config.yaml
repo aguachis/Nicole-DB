@@ -1,0 +1,55 @@
+schema: spec-driven
+
+context: |
+	Eres un experto en bases de datos SQL Server.
+	Proyecto: ERP S.A.S. de inventario y facturacion con modelo multiempresa.
+	Motor y esquema objetivo: SQL Server, esquema dbo.
+	Estado actual: este repositorio contiene base core, seguridad, usuarios y configuracion inicial de empresa.
+	Inventario y facturacion aun no tienen DDL definitivo; no asumir tablas no creadas.
+
+	Fuentes de verdad del proyecto:
+	- docs/db/BACKEND_DATABASE_CONTEXT.md
+	- docs/db/02-conventions.md
+	- docs/db/03-new-database-working-document.md
+	- docs/db/entities/**
+	- docs/db/stored-procedures/**
+	- docs/db/integrations/**
+
+	Modelo de seguridad vigente:
+	- Autenticacion por usuario.
+	- Autorizacion por permisos efectivos en la empresa activa.
+	- No autorizar por nombre de perfil fijo (por ejemplo ADMIN) sin validar permisos.
+	- Relacion clave: AppUser -> UserCompany -> UserCompanyProfile -> Profile -> ProfilePermission -> Permission.
+
+	Entidades core vigentes:
+	- EntityStatus, IdentificationType, PersonType, Person
+	- Company, CompanyBranch, CompanyEmissionPoint
+	- AppUser, UserCompany, Profile, Permission, ProfilePermission, UserCompanyProfile
+
+rules:
+	proposal:
+		- Escribir en espanol tecnico y aterrizado a SQL Server.
+		- Incluir alcance, no-alcance, impacto en tablas/SPs/indices y estrategia de rollback.
+		- Citar archivos del repo que respaldan la decision.
+		- Si hay cambios de seguridad, explicar como se validan permisos efectivos por empresa.
+	design:
+		- Priorizar integridad referencial con FK fisicas cuando la relacion sea real y estable.
+		- Preferir PK surrogate estables y mantener claves naturales como UNIQUE cuando aplique.
+		- Estandarizar estados y auditoria (CreatedAt/CreatedBy/UpdatedAt/UpdatedBy o legacy documentado).
+		- Evitar duplicar entidades por idioma o responsabilidad.
+		- Evitar tipos no recomendados (image) y revisar uso de money y MAX sin necesidad.
+		- Homologar fechas a datetime2 cuando el contexto lo permita.
+	sql:
+		- Generar SQL compatible con SQL Server (T-SQL), esquema dbo y nombres explicitos.
+		- Antes de proponer cambios, revisar scripts y contexto vigente en docs/db/entities y docs/db/stored-procedures.
+		- Cada indice debe responder a un patron real de consulta, FK, join o filtro frecuente.
+		- Evitar indices redundantes o duplicados.
+		- En SPs: documentar objetivo, parametros, tablas afectadas, transacciones y manejo de errores.
+	security:
+		- No basar autorizacion solo en nombre de perfil.
+		- Validar permisos efectivos por UserId y CompanyId en cada endpoint o SP sensible.
+		- Mantener consistencia multiempresa al asignar perfiles (CompanyId debe coincidir en relaciones).
+	tasks:
+		- Dividir tareas por entidad/modulo con scripts pequenos y revisables.
+		- Incluir validacion tecnica minima: FK, unique, indices y casos de autorizacion.
+		- Para inventario/facturacion, crear y aprobar DDL antes de proponer APIs o SPs finales.
