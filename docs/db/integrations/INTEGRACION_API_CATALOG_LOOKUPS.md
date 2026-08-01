@@ -43,6 +43,37 @@ Script: `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql`
 
 SP: `dbo.P_Catalog_Lookup`
 
+## Contrato canonico de respuesta
+
+Campos por item:
+
+- `value` (obligatorio): identificador funcional del item para seleccion.
+- `label` (obligatorio): texto principal visible.
+- `status` (obligatorio): estado funcional (`A` o `I`).
+- `description` (opcional): descripcion ampliada del item.
+- `sortOrder` (opcional): prioridad de orden cuando el catalogo lo soporte.
+
+Regla de compatibilidad:
+
+- Los campos actuales (`value`, `label`, `description`, `status`) se mantienen sin cambios semanticos.
+- `sortOrder` se incorpora como campo opcional y no rompe consumidores existentes.
+
+## Mapeo funcional por clave
+
+| key | Fuente | value | label | description | status |
+| --- | --- | --- | --- | --- | --- |
+| `STATUS` | `dbo.EntityStatus` | `StatusCode` | `StatusName` | `StatusDescription` | `StatusCode` |
+| `IDENTIFICATION` | `dbo.IdentificationType` | `IdentificationTypeId` | `Name` | `Description` | `Status` |
+| `PERSON_TYPE` | `dbo.PersonType` | `PersonTypeId` | `Name` | `Description` | `Status` |
+
+## Reglas operativas del lookup
+
+- Filtro por defecto: solo activos.
+- Override explicito: `includeInactive=true` permite incluir activos e inactivos.
+- Determinismo de orden:
+  - Si la fuente tiene `SortOrder`, ordenar por `SortOrder` y luego `label`.
+  - Si la fuente no tiene `SortOrder`, usar fallback por `label` ascendente.
+
 ## Clases C# sugeridas
 
 ### Query
@@ -60,8 +91,8 @@ public sealed class CatalogLookupQuery
 ```csharp
 public sealed class CatalogLookupSpParameters
 {
-  public string CatalogKey { get; set; } = string.Empty;
-  public bool IncludeInactive { get; set; }
+    public string CatalogKey { get; set; } = string.Empty;
+    public bool IncludeInactive { get; set; }
 }
 ```
 
@@ -74,6 +105,7 @@ public sealed class CatalogLookupItemResponse
     public string Label { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Status { get; set; } = string.Empty;
+    public int? SortOrder { get; set; }
 }
 ```
 
@@ -128,13 +160,15 @@ EXEC dbo.P_Catalog_Lookup
       "value": "04",
       "label": "RUC",
       "description": "Ruc",
-      "status": "A"
+      "status": "A",
+      "sortOrder": null
     },
     {
       "value": "05",
       "label": "CEDULA",
       "description": "Cedula",
-      "status": "A"
+      "status": "A",
+      "sortOrder": null
     }
   ]
 }
@@ -146,6 +180,7 @@ EXEC dbo.P_Catalog_Lookup
 - `key` debe pertenecer al set soportado por el backend.
 - Si la clave no existe, el backend debe responder con error controlado.
 - Por defecto no se incluyen registros inactivos.
+- Cualquier campo opcional agregado debe preservarse como no obligatorio para consumidores existentes.
 
 ## Mapeo sugerido de result_code a HTTP
 
@@ -161,6 +196,7 @@ EXEC dbo.P_Catalog_Lookup
 - El backend debe centralizar el mapeo de clave funcional a fuente de verdad.
 - Esta capa es compatible con pantallas que consumen catalogos en formularios de alta o edicion.
 - Si un catalogo nuevo necesita ser expuesto, primero debe existir su entidad y su semilla en base de datos.
+- El detalle operativo de adopcion backend se documenta en `docs/db/integrations/INTEGRACION_API_CATALOG_LOOKUPS_BACKEND_HANDOFF.md`.
 
 ## Relacion con otros contratos
 
