@@ -1,5 +1,5 @@
 /*
-Script: 01-insert-mock-data.sql
+Script: 99-insert-mock-data.sql
 Objetivo:
     Insertar datos mock minimos para validar las relaciones principales
     del modelo nuevo.

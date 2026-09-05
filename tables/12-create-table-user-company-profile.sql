@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-user-company-profile.sql
+Script: 12-create-table-user-company-profile.sql
 Entidad: dbo.UserCompanyProfile
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

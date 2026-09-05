@@ -6,13 +6,13 @@ Definicion inicial para base nueva.
 
 ## Procedimientos principales
 
-- `docs/db/stored-procedures/auth/P_Auth_Register.sql`
-- `docs/db/stored-procedures/auth/P_Auth_Login.sql`
-- `docs/db/stored-procedures/auth/P_Auth_GetSessionContext.sql`
-- `docs/db/stored-procedures/auth/P_User_Create.sql`
-- `docs/db/stored-procedures/auth/P_User_Update.sql`
-- `docs/db/stored-procedures/auth/P_User_SetStatus.sql`
-- `docs/db/stored-procedures/auth/P_User_List.sql`
+- `procedures/auth/P_Auth_Register.sql`
+- `procedures/auth/P_Auth_Login.sql`
+- `procedures/auth/P_Auth_GetSessionContext.sql`
+- `procedures/auth/P_User_Create.sql`
+- `procedures/auth/P_User_Update.sql`
+- `procedures/auth/P_User_SetStatus.sql`
+- `procedures/auth/P_User_List.sql`
 
 ## Objetivos
 

@@ -54,7 +54,7 @@ Representa un punto de emision asociado a una sucursal. Es clave para facturacio
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/company-emission-point/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/company-emission-point/00-create-table-company-emission-point.sql`
+- Script normalizado para repo: `tables/06-create-table-company-emission-point.sql`
 
 ## Notas
 

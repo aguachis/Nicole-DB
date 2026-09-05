@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-company-emission-point.sql
+Script: 06-create-table-company-emission-point.sql
 Entidad: dbo.CompanyEmissionPoint
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

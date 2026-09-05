@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-company-branch.sql
+Script: 05-create-table-company-branch.sql
 Entidad: dbo.CompanyBranch
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

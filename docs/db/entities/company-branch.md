@@ -59,7 +59,7 @@ Representa una sucursal o establecimiento operativo de una empresa. Es la entida
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/company-branch/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/company-branch/00-create-table-company-branch.sql`
+- Script normalizado para repo: `tables/05-create-table-company-branch.sql`
 
 ## Notas
 

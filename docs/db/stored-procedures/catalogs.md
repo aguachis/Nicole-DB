@@ -16,7 +16,7 @@ Exponer una consulta unificada por clave funcional para catalogos comunes del si
 
 ## Procedimientos principales
 
-- `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql`
+- `procedures/catalogs/P_Catalog_Lookup.sql`
 
 ## Regla importante
 
@@ -24,7 +24,7 @@ La consulta unificada debe devolver solo registros activos por defecto y mantene
 
 ## Nomenclatura y ubicacion de SP
 
-- Dominio catalogs (`docs/db/stored-procedures/catalogs/`): prefijo `P_Catalog_` para lectura de catalogos compartidos.
+- Dominio catalogs (`procedures/catalogs/`): prefijo `P_Catalog_` para lectura de catalogos compartidos.
 
 ## Matriz minima de validaciones
 

@@ -39,10 +39,10 @@ Este documento complementa la integracion de auth y perfiles existente, y estand
 
 Scripts:
 
-- `docs/db/stored-procedures/auth/P_User_Create.sql`
-- `docs/db/stored-procedures/auth/P_User_Update.sql`
-- `docs/db/stored-procedures/auth/P_User_SetStatus.sql`
-- `docs/db/stored-procedures/auth/P_User_List.sql`
+- `procedures/auth/P_User_Create.sql`
+- `procedures/auth/P_User_Update.sql`
+- `procedures/auth/P_User_SetStatus.sql`
+- `procedures/auth/P_User_List.sql`
 
 ### Dominio Asignacion de Perfiles
 
@@ -51,8 +51,8 @@ Scripts:
 
 Scripts:
 
-- `docs/db/stored-procedures/profile/P_UserCompanyProfile_Assign.sql`
-- `docs/db/stored-procedures/profile/P_UserCompanyProfile_Revoke.sql`
+- `procedures/profile/P_UserCompanyProfile_Assign.sql`
+- `procedures/profile/P_UserCompanyProfile_Revoke.sql`
 
 ## Contrato estandar de respuesta
 

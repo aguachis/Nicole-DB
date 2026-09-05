@@ -16,52 +16,52 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 
 ## Orden de Ejecucion Recomendado
 
-1. `docs/db/entities/status/00-create-table-entitystatus.sql`
-2. `docs/db/entities/identification-type/00-create-table-identificationType.sql`
-3. `docs/db/entities/person-type/00-create-table-persontype.sql`
-4. `docs/db/entities/00-seed-base-catalogs.sql`
-5. `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql`
-6. `docs/db/entities/person/00-create-table-person.sql`
-7. `docs/db/entities/company/00-create-table-company.sql`
-8. `docs/db/entities/company-branch/00-create-table-company-branch.sql`
-9. `docs/db/entities/company-emission-point/00-create-table-company-emission-point.sql`
-10. `docs/db/entities/app-user/00-create-table-appuser.sql`
-11. `docs/db/entities/profile/00-create-table-profile.sql`
-12. `docs/db/entities/permission/00-create-table-permission.sql`
-13. `docs/db/entities/permission/01-seed-base-permissions.sql`
-14. `docs/db/entities/profile-permission/00-create-table-profile-permission.sql`
-15. `docs/db/entities/user-company/00-create-table-user-company.sql`
-16. `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql`
-17. `docs/db/stored-procedures/auth/P_Auth_Register.sql`
-18. `docs/db/05-recommended-indexes.sql`
+1. `tables/00-create-table-entitystatus.sql`
+2. `tables/01-create-table-identification-type.sql`
+3. `tables/02-create-table-person-type.sql`
+4. `seeds/00-seed-base-catalogs.sql`
+5. `procedures/catalogs/P_Catalog_Lookup.sql`
+6. `tables/03-create-table-person.sql`
+7. `tables/04-create-table-company.sql`
+8. `tables/05-create-table-company-branch.sql`
+9. `tables/06-create-table-company-emission-point.sql`
+10. `tables/07-create-table-app-user.sql`
+11. `tables/08-create-table-profile.sql`
+12. `tables/09-create-table-permission.sql`
+13. `seeds/01-seed-base-permissions.sql`
+14. `tables/10-create-table-profile-permission.sql`
+15. `tables/11-create-table-user-company.sql`
+16. `tables/12-create-table-user-company-profile.sql`
+17. `procedures/auth/P_Auth_Register.sql`
+18. `tables/indexes/02-recommended-indexes.sql`
 
 ## Tablas Vigentes
 
 | Tabla | Dominio | Proposito | Script |
 | --- | --- | --- | --- |
-| `EntityStatus` | Core | Catalogo canonico de estados (`A`, `I`). | `docs/db/entities/status/00-create-table-entitystatus.sql` |
-| `IdentificationType` | Core | Catalogo de tipos de identificacion tributaria/civil. | `docs/db/entities/identification-type/00-create-table-identificationType.sql` |
-| `PersonType` | Core | Catalogo de persona natural o juridica. | `docs/db/entities/person-type/00-create-table-persontype.sql` |
-| `Person` | Core | Entidad canonica para personas naturales y juridicas. | `docs/db/entities/person/00-create-table-person.sql` |
-| `Company` | Empresa | Empresa legal del modelo multiempresa. | `docs/db/entities/company/00-create-table-company.sql` |
-| `CompanyBranch` | Empresa | Sucursal o establecimiento operativo de una empresa. | `docs/db/entities/company-branch/00-create-table-company-branch.sql` |
-| `CompanyEmissionPoint` | Facturacion | Punto de emision asociado a una sucursal. | `docs/db/entities/company-emission-point/00-create-table-company-emission-point.sql` |
-| `AppUser` | Seguridad | Identidad de acceso a la aplicacion. | `docs/db/entities/app-user/00-create-table-appuser.sql` |
-| `UserCompany` | Seguridad | Relacion entre usuario y empresa. | `docs/db/entities/user-company/00-create-table-user-company.sql` |
-| `Profile` | Seguridad | Perfil o rol definido dentro de una empresa. | `docs/db/entities/profile/00-create-table-profile.sql` |
-| `Permission` | Seguridad | Catalogo de permisos funcionales usados por la app. | `docs/db/entities/permission/00-create-table-permission.sql` |
-| `ProfilePermission` | Seguridad | Permisos asignados a perfiles. | `docs/db/entities/profile-permission/00-create-table-profile-permission.sql` |
-| `UserCompanyProfile` | Seguridad | Perfil asignado a un usuario dentro de una empresa. | `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql` |
+| `EntityStatus` | Core | Catalogo canonico de estados (`A`, `I`). | `tables/00-create-table-entitystatus.sql` |
+| `IdentificationType` | Core | Catalogo de tipos de identificacion tributaria/civil. | `tables/01-create-table-identification-type.sql` |
+| `PersonType` | Core | Catalogo de persona natural o juridica. | `tables/02-create-table-person-type.sql` |
+| `Person` | Core | Entidad canonica para personas naturales y juridicas. | `tables/03-create-table-person.sql` |
+| `Company` | Empresa | Empresa legal del modelo multiempresa. | `tables/04-create-table-company.sql` |
+| `CompanyBranch` | Empresa | Sucursal o establecimiento operativo de una empresa. | `tables/05-create-table-company-branch.sql` |
+| `CompanyEmissionPoint` | Facturacion | Punto de emision asociado a una sucursal. | `tables/06-create-table-company-emission-point.sql` |
+| `AppUser` | Seguridad | Identidad de acceso a la aplicacion. | `tables/07-create-table-app-user.sql` |
+| `UserCompany` | Seguridad | Relacion entre usuario y empresa. | `tables/11-create-table-user-company.sql` |
+| `Profile` | Seguridad | Perfil o rol definido dentro de una empresa. | `tables/08-create-table-profile.sql` |
+| `Permission` | Seguridad | Catalogo de permisos funcionales usados por la app. | `tables/09-create-table-permission.sql` |
+| `ProfilePermission` | Seguridad | Permisos asignados a perfiles. | `tables/10-create-table-profile-permission.sql` |
+| `UserCompanyProfile` | Seguridad | Perfil asignado a un usuario dentro de una empresa. | `tables/12-create-table-user-company-profile.sql` |
 
 ## Scripts Complementarios
 
 | Script | Tipo | Uso |
 | --- | --- | --- |
-| `docs/db/entities/00-seed-base-catalogs.sql` | Seed obligatorio | Crea `EntityStatus`, `IdentificationType` y `PersonType` base. |
-| `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql` | Consulta catalogos | Expone `STATUS`, `IDENTIFICATION` y `PERSON_TYPE` para selects. |
-| `docs/db/entities/permission/01-seed-base-permissions.sql` | Seed obligatorio | Crea permisos base para administracion inicial. |
-| `docs/db/entities/01-insert-mock-data.sql` | Seed de pruebas | Crea datos mock y asigna todos los permisos base al perfil `ADMIN`. |
-| `docs/db/05-recommended-indexes.sql` | Optimizacion recomendada | Crea indices para login, selector de empresa y permisos efectivos. |
+| `seeds/00-seed-base-catalogs.sql` | Seed obligatorio | Crea `EntityStatus`, `IdentificationType` y `PersonType` base. |
+| `procedures/catalogs/P_Catalog_Lookup.sql` | Consulta catalogos | Expone `STATUS`, `IDENTIFICATION` y `PERSON_TYPE` para selects. |
+| `seeds/01-seed-base-permissions.sql` | Seed obligatorio | Crea permisos base para administracion inicial. |
+| `seeds/99-insert-mock-data.sql` | Seed de pruebas | Crea datos mock y asigna todos los permisos base al perfil `ADMIN`. |
+| `tables/indexes/02-recommended-indexes.sql` | Optimizacion recomendada | Crea indices para login, selector de empresa y permisos efectivos. |
 | `docs/db/entities/app-user/01-unique-username-filtered.sql` | Constraint opcional | Hace `Username` unico cuando no es null. Ejecutar solo si la app permitira login/busqueda por username. |
 
 ## Integraciones Backend
@@ -93,8 +93,8 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 
 | Stored Procedure | Proposito | Script |
 | --- | --- | --- |
-| `dbo.P_Auth_Register` | Registra persona, usuario, empresa, sucursal, punto de emision, relacion usuario-empresa, perfil `ADMIN` y permisos base en una transaccion. | `docs/db/stored-procedures/auth/P_Auth_Register.sql` |
-| `dbo.P_Catalog_Lookup` | Consulta catalogos comunes para selects de UI con clave funcional estable. | `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql` |
+| `dbo.P_Auth_Register` | Registra persona, usuario, empresa, sucursal, punto de emision, relacion usuario-empresa, perfil `ADMIN` y permisos base en una transaccion. | `procedures/auth/P_Auth_Register.sql` |
+| `dbo.P_Catalog_Lookup` | Consulta catalogos comunes para selects de UI con clave funcional estable. | `procedures/catalogs/P_Catalog_Lookup.sql` |
 
 ## Regla de Autorizacion
 

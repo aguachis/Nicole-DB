@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-profile.sql
+Script: 08-create-table-profile.sql
 Entidad: dbo.Profile
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

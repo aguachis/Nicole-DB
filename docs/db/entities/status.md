@@ -58,9 +58,9 @@ Esta tabla es referenciada por entidades con columna `Status`, por ejemplo:
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/status/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/status/00-create-table-entitystatus.sql`
+- Script normalizado para repo: `tables/00-create-table-entitystatus.sql`
 
 ## Notas
 
 - La estructura actual no declara indices adicionales fuera de la PK y el unique por `StatusName`.
-- Los datos iniciales se mantienen en `docs/db/entities/01-insert-mock-data.sql`.
+- Los datos iniciales se mantienen en `seeds/99-insert-mock-data.sql`.

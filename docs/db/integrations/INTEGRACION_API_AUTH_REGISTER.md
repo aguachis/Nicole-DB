@@ -12,7 +12,7 @@ Este endpoint debe usarse para alta inicial de empresa, no para crear usuarios a
 
 ## Stored Procedure
 
-Script: `docs/db/stored-procedures/auth/P_Auth_Register.sql`
+Script: `procedures/auth/P_Auth_Register.sql`
 
 SP: `dbo.P_Auth_Register`
 

@@ -57,7 +57,7 @@ Representa un perfil o rol dentro de una empresa. El modelo es multiempresa: el 
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/profile/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/profile/00-create-table-profile.sql`
+- Script normalizado para repo: `tables/08-create-table-profile.sql`
 
 ## Notas
 

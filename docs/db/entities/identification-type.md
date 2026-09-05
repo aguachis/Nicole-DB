@@ -58,10 +58,10 @@ Catalogo de tipos de identificacion usados por `Person`. Permite distinguir RUC,
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/identification-type/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/identification-type/00-create-table-identificationType.sql`
+- Script normalizado para repo: `tables/01-create-table-identification-type.sql`
 
 ## Notas
 
 - La estructura actual no declara indices adicionales fuera de la PK y el unique por `Name`.
 - La estructura actual no declara un check directo para limitar `Status` a `A`/`I`; esa validez depende de la FK a `EntityStatus`.
-- Los datos iniciales se mantienen en `docs/db/entities/01-insert-mock-data.sql`.
+- Los datos iniciales se mantienen en `seeds/99-insert-mock-data.sql`.

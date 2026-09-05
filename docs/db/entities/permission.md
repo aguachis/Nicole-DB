@@ -56,7 +56,7 @@ Cataloga permisos funcionales que la aplicacion debe validar para autorizar acci
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/permission/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/permission/00-create-table-permission.sql`
+- Script normalizado para repo: `tables/09-create-table-permission.sql`
 
 ## Notas
 

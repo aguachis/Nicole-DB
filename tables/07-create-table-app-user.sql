@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-appuser.sql
+Script: 07-create-table-app-user.sql
 Entidad: dbo.AppUser
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

@@ -21,7 +21,7 @@ La consulta actual de usuarios no devuelve todos los datos personales necesarios
 
 ## Impact
 
-- Afecta SP `docs/db/stored-procedures/auth/P_User_List.sql`.
-- Afecta SP `docs/db/stored-procedures/auth/P_User_Create.sql`.
+- Afecta SP `procedures/auth/P_User_List.sql`.
+- Afecta SP `procedures/auth/P_User_Create.sql`.
 - Puede afectar documentos de integracion de auth/usuarios en `docs/db/integrations/`.
 - Impacta validaciones sobre `dbo.Person` y `dbo.AppUser`, incluyendo reglas de identificacion y duplicados.

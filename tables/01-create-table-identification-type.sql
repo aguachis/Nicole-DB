@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-identificationType.sql
+Script: 01-create-table-identification-type.sql
 Entidad: dbo.IdentificationType
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

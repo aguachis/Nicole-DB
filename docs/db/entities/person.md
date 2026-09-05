@@ -72,7 +72,7 @@ Representa personas naturales y juridicas en una sola entidad canonica. Es usada
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/person/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/person/00-create-table-person.sql`
+- Script normalizado para repo: `tables/03-create-table-person.sql`
 
 ## Notas
 

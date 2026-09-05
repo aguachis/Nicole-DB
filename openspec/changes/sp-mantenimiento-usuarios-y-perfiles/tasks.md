@@ -2,7 +2,7 @@
 
 - [x] 1.1 Revisar convenciones en `docs/db/02-conventions.md` y definir plantilla unica de respuesta (`result_code`, `result_message`, dataset).
 - [x] 1.2 Levantar matriz de validaciones de negocio para usuario, perfil y relacion usuario-empresa.
-- [x] 1.3 Definir nomenclatura final de SP y su ubicacion en `docs/db/stored-procedures/auth/` y `docs/db/stored-procedures/profile/`.
+- [x] 1.3 Definir nomenclatura final de SP y su ubicacion en `procedures/auth/` y `procedures/profile/`.
 
 ## 2. Implementacion de SP de mantenimiento de usuarios
 

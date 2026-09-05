@@ -1,5 +1,5 @@
 /*
-Script: 05-recommended-indexes.sql
+Script: 02-recommended-indexes.sql
 Objetivo:
     Crear indices no unicos recomendados para las consultas principales
     de autenticacion, seleccion de empresa y permisos efectivos.

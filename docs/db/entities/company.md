@@ -70,7 +70,7 @@ Representa la empresa legal dentro del modelo multiempresa del S.A.S. Sirve como
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/company/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/company/00-create-table-company.sql`
+- Script normalizado para repo: `tables/04-create-table-company.sql`
 
 ## Notas
 

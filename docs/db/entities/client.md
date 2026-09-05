@@ -69,8 +69,8 @@ Representa el snapshot comercial de un cliente para una empresa especifica. Perm
 
 ## Scripts
 
-- Script normalizado para repo: `docs/db/entities/client/00-create-table-client.sql`
-- Indice recomendado integrado en: `docs/db/05-recommended-indexes.sql`
+- Script normalizado para repo: `tables/13-create-table-client.sql`
+- Indice recomendado integrado en: `tables/indexes/02-recommended-indexes.sql`
 
 ## Notas
 

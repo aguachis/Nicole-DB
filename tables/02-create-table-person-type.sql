@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-persontype.sql
+Script: 02-create-table-person-type.sql
 Entidad: dbo.PersonType
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

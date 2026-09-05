@@ -20,16 +20,16 @@ Cubrir el mantenimiento de perfiles por empresa y la asignacion de permisos a ca
 
 ## Procedimientos principales
 
-- `docs/db/stored-procedures/profile/00-create-type-permission-code-list.sql`
-- `docs/db/stored-procedures/profile/P_Permission_List.sql`
-- `docs/db/stored-procedures/profile/P_Profile_ListByCompany.sql`
-- `docs/db/stored-procedures/profile/P_Profile_GetDetail.sql`
-- `docs/db/stored-procedures/profile/P_Profile_Create.sql`
-- `docs/db/stored-procedures/profile/P_Profile_Update.sql`
-- `docs/db/stored-procedures/profile/P_Profile_Deactivate.sql`
-- `docs/db/stored-procedures/profile/P_ProfilePermission_ReplaceByProfile.sql`
-- `docs/db/stored-procedures/profile/P_UserCompanyProfile_Assign.sql`
-- `docs/db/stored-procedures/profile/P_UserCompanyProfile_Revoke.sql`
+- `types/00-create-type-permission-code-list.sql`
+- `procedures/profile/P_Permission_List.sql`
+- `procedures/profile/P_Profile_ListByCompany.sql`
+- `procedures/profile/P_Profile_GetDetail.sql`
+- `procedures/profile/P_Profile_Create.sql`
+- `procedures/profile/P_Profile_Update.sql`
+- `procedures/profile/P_Profile_Deactivate.sql`
+- `procedures/profile/P_ProfilePermission_ReplaceByProfile.sql`
+- `procedures/profile/P_UserCompanyProfile_Assign.sql`
+- `procedures/profile/P_UserCompanyProfile_Revoke.sql`
 
 ## Regla importante
 
@@ -50,8 +50,8 @@ Cubrir el mantenimiento de perfiles por empresa y la asignacion de permisos a ca
 
 ## Nomenclatura y ubicacion de SP
 
-- Dominio auth (`docs/db/stored-procedures/auth/`): prefijo `P_User_` para mantenimiento de usuario.
-- Dominio profile (`docs/db/stored-procedures/profile/`): prefijo `P_UserCompanyProfile_` para asignacion/revocacion por empresa.
+- Dominio auth (`procedures/auth/`): prefijo `P_User_` para mantenimiento de usuario.
+- Dominio profile (`procedures/profile/`): prefijo `P_UserCompanyProfile_` para asignacion/revocacion por empresa.
 - Operaciones de asignacion deben validar usuario activo, pertenencia `UserCompany` activa y perfil activo de la misma empresa.
 
 ## Matriz minima de validaciones en asignacion de perfiles

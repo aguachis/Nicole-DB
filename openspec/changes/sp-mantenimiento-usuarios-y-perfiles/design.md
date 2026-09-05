@@ -18,8 +18,8 @@ El proyecto documenta entidades de seguridad (`app-user`, `profile`, `user-compa
 ## Decisions
 
 1. Agrupar los SP en dominios funcionales:
-- Dominio de usuario en `docs/db/stored-procedures/auth/`.
-- Dominio de perfiles/relaciones en `docs/db/stored-procedures/profile/`.
+- Dominio de usuario en `procedures/auth/`.
+- Dominio de perfiles/relaciones en `procedures/profile/`.
 Razon: mantiene coherencia con la organizacion documental existente.
 
 2. Estandarizar firma de respuesta en todos los SP:

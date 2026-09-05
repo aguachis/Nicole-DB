@@ -55,10 +55,10 @@ Catalogo base para clasificar personas como naturales o juridicas. La tabla `Per
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/person-type/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/person-type/00-create-table-persontype.sql`
+- Script normalizado para repo: `tables/02-create-table-person-type.sql`
 
 ## Notas
 
 - La estructura actual no declara indices adicionales fuera de la PK y el unique por `Name`.
 - La estructura actual no declara checks directos para limitar `PersonTypeId` a `N`/`J` ni `Status` a `A`/`I`.
-- Los datos iniciales se mantienen en `docs/db/entities/01-insert-mock-data.sql`.
+- Los datos iniciales se mantienen en `seeds/99-insert-mock-data.sql`.

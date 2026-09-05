@@ -12,7 +12,7 @@ El SP no recibe la clave plana. El backend no debe exponer si fallo el email, la
 
 ## Stored Procedure
 
-Script: `docs/db/stored-procedures/auth/P_Auth_Login.sql`
+Script: `procedures/auth/P_Auth_Login.sql`
 
 SP: `dbo.P_Auth_Login`
 

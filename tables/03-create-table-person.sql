@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-person.sql
+Script: 03-create-table-person.sql
 Entidad: dbo.Person
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

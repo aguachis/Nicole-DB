@@ -33,13 +33,13 @@ Flujo esperado:
 
 Scripts:
 
-- `docs/db/stored-procedures/profile/P_Profile_ListByCompany.sql`
-- `docs/db/stored-procedures/profile/P_Profile_GetDetail.sql`
-- `docs/db/stored-procedures/profile/P_Profile_Create.sql`
-- `docs/db/stored-procedures/profile/P_Profile_Update.sql`
-- `docs/db/stored-procedures/profile/P_Profile_Deactivate.sql`
-- `docs/db/stored-procedures/profile/P_Permission_List.sql`
-- `docs/db/stored-procedures/profile/P_ProfilePermission_ReplaceByProfile.sql`
+- `procedures/profile/P_Profile_ListByCompany.sql`
+- `procedures/profile/P_Profile_GetDetail.sql`
+- `procedures/profile/P_Profile_Create.sql`
+- `procedures/profile/P_Profile_Update.sql`
+- `procedures/profile/P_Profile_Deactivate.sql`
+- `procedures/profile/P_Permission_List.sql`
+- `procedures/profile/P_ProfilePermission_ReplaceByProfile.sql`
 
 ## Clases C# Sugeridas
 

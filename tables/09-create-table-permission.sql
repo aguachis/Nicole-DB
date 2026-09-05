@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-permission.sql
+Script: 09-create-table-permission.sql
 Entidad: dbo.Permission
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

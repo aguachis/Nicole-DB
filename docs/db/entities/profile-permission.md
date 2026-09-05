@@ -54,7 +54,7 @@ Relaciona perfiles con permisos funcionales. Es la tabla puente que define que a
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/profile-permission/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/profile-permission/00-create-table-profile-permission.sql`
+- Script normalizado para repo: `tables/10-create-table-profile-permission.sql`
 
 ## Notas
 

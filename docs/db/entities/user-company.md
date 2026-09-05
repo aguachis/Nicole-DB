@@ -56,7 +56,7 @@ Relaciona usuarios de la aplicacion con empresas. Permite que un usuario acceda 
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/user-company/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/user-company/00-create-table-user-company.sql`
+- Script normalizado para repo: `tables/11-create-table-user-company.sql`
 
 ## Notas
 

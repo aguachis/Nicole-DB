@@ -63,7 +63,7 @@ Representa la identidad de acceso a la aplicacion. Se relaciona con `Person` par
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/app-user/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/app-user/00-create-table-appuser.sql`
+- Script normalizado para repo: `tables/07-create-table-app-user.sql`
 
 ## Notas
 

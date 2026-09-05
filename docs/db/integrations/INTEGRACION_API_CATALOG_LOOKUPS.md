@@ -39,7 +39,7 @@ Ejemplos:
 
 ## Stored Procedure
 
-Script: `docs/db/stored-procedures/catalogs/P_Catalog_Lookup.sql`
+Script: `procedures/catalogs/P_Catalog_Lookup.sql`
 
 SP: `dbo.P_Catalog_Lookup`
 

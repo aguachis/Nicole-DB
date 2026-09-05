@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-profile-permission.sql
+Script: 10-create-table-profile-permission.sql
 Entidad: dbo.ProfilePermission
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

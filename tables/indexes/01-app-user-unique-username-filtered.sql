@@ -1,5 +1,5 @@
 /*
-Script: 01-unique-username-filtered.sql
+Script: 01-app-user-unique-username-filtered.sql
 Objetivo:
     Evitar usernames duplicados cuando Username tenga valor.
 

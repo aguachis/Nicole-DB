@@ -17,7 +17,7 @@ La consulta se resuelve con `dbo.P_Auth_GetSessionContext`.
 
 ## Stored Procedure
 
-Script: `docs/db/stored-procedures/auth/P_Auth_GetSessionContext.sql`
+Script: `procedures/auth/P_Auth_GetSessionContext.sql`
 
 SP: `dbo.P_Auth_GetSessionContext`
 

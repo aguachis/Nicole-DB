@@ -55,7 +55,7 @@ Asigna perfiles a usuarios dentro de una empresa. Esta tabla materializa la regl
 ## Scripts
 
 - Esquema actual recibido desde BD: `docs/db/entities/user-company-profile/00-current-schema.sql`
-- Script normalizado para repo: `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql`
+- Script normalizado para repo: `tables/12-create-table-user-company-profile.sql`
 
 ## Notas
 

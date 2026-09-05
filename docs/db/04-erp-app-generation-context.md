@@ -812,14 +812,14 @@ Valida siempre por permiso efectivo del usuario en la empresa activa.
 
 ## Archivos SQL fuente
 
-- `docs/db/entities/status/00-create-table-entitystatus.sql`
-- `docs/db/entities/identification-type/00-create-table-identificationType.sql`
-- `docs/db/entities/person-type/00-create-table-persontype.sql`
-- `docs/db/entities/person/00-create-table-person.sql`
-- `docs/db/entities/company/00-create-table-company.sql`
-- `docs/db/entities/app-user/00-create-table-appuser.sql`
-- `docs/db/entities/user-company/00-create-table-user-company.sql`
-- `docs/db/entities/profile/00-create-table-profile.sql`
-- `docs/db/entities/permission/00-create-table-permission.sql`
-- `docs/db/entities/profile-permission/00-create-table-profile-permission.sql`
-- `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql`
+- `tables/00-create-table-entitystatus.sql`
+- `tables/01-create-table-identification-type.sql`
+- `tables/02-create-table-person-type.sql`
+- `tables/03-create-table-person.sql`
+- `tables/04-create-table-company.sql`
+- `tables/07-create-table-app-user.sql`
+- `tables/11-create-table-user-company.sql`
+- `tables/08-create-table-profile.sql`
+- `tables/09-create-table-permission.sql`
+- `tables/10-create-table-profile-permission.sql`
+- `tables/12-create-table-user-company-profile.sql`

@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-user-company.sql
+Script: 11-create-table-user-company.sql
 Entidad: dbo.UserCompany
 Fuente: Script actual de BD Nicole recibido el 2026-06-19
 Objetivo:

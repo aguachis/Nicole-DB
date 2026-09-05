@@ -20,12 +20,12 @@ Por eso el modelo recomendado es:
 
 ## Scripts base
 
-- `docs/db/entities/app-user/00-create-table-appuser.sql`
-- `docs/db/entities/profile/00-create-table-profile.sql`
-- `docs/db/entities/permission/00-create-table-permission.sql`
-- `docs/db/entities/profile-permission/00-create-table-profile-permission.sql`
-- `docs/db/entities/user-company/00-create-table-user-company.sql`
-- `docs/db/entities/user-company-profile/00-create-table-user-company-profile.sql`
+- `tables/07-create-table-app-user.sql`
+- `tables/08-create-table-profile.sql`
+- `tables/09-create-table-permission.sql`
+- `tables/10-create-table-profile-permission.sql`
+- `tables/11-create-table-user-company.sql`
+- `tables/12-create-table-user-company-profile.sql`
 
 ## Comentario de diseno
 

@@ -1,5 +1,5 @@
 /*
-Script: 00-create-table-client.sql
+Script: 13-create-table-client.sql
 Entidad: dbo.Client
 Fuente: Propuesta normalizada para BD Nicole (snapshot comercial) 2026-07-25
 Objetivo:
