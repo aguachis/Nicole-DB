@@ -22,7 +22,7 @@ Actualmente no existe un set estandarizado de procedimientos almacenados para el
 
 ## Impact
 
-- Afecta scripts SQL en `procedures/auth/` y/o `procedures/profile/`.
-- Afecta artefactos de documentacion en `docs/db/integrations/` para consumo desde API.
+- Afecta scripts SQL en `database/procedures/auth/` y/o `database/procedures/profile/`.
+- Afecta artefactos de documentacion en `database/docs/db/integrations/` para consumo desde API.
 - Impacta el modulo de seguridad de base de datos (`app-user`, `profile`, `user-company`, `user-company-profile`).
-- Requiere alinear convenciones de nombres y codigos de respuesta con los documentos de `docs/db/02-conventions.md`.
+- Requiere alinear convenciones de nombres y codigos de respuesta con los documentos de `database/docs/db/02-conventions.md`.

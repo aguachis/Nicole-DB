@@ -9,4 +9,6 @@ Este recorrido es exclusivamente para una base de datos vacia. No contiene prefl
 
 El manifiesto crea las tablas base y del registro, claves, FK, indices, seeds, procedimientos y el rol `nicole_app` en el orden de dependencias. No ejecutes los archivos anteriores de `database/migrations/`, `database/validation/`, `database/tests/` o `database/rollback/`; corresponden al enfoque de migracion descartado.
 
+Todos los scripts de procedimientos almacenados se mantienen centralizados en `database/procedures/`, separados por dominio (`auth`, `catalogs`, `profile` y `registry-client`).
+
 El DBA debe revisar el resultado de SQL Server y registrar sus propias evidencias. Este repositorio solo entrega la definicion y no ha ejecutado el manifiesto.

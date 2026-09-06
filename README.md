@@ -14,22 +14,22 @@ El repositorio contiene, entre otros, los siguientes artefactos:
 
 No contiene una instancia de SQL Server ni administra su despliegue. Por tanto, los scripts no se ejecutan, validan ni certifican desde este repositorio. La ejecución, revisión de resultados, respaldo, control de acceso y evidencias son responsabilidad de la persona encargada de la base de datos.
 
-La guía completa de alcance, responsabilidades y criterio de entrega está en [docs/db/01-project-scope-and-delivery.md](docs/db/01-project-scope-and-delivery.md).
+La guía completa de alcance, responsabilidades y criterio de entrega está en [database/docs/db/01-project-scope-and-delivery.md](database/docs/db/01-project-scope-and-delivery.md).
 
 ## Estructura
 
-- `tables/`: definición canónica de tablas, en orden de creación; incluye claves, restricciones y valores por defecto.
-- `tables/indexes/`: índices adicionales que se crean después de las tablas de las que dependen.
-- `procedures/`: procedimientos almacenados agrupados por dominio funcional.
-- `types/`: tipos definidos por el usuario requeridos por procedimientos.
-- `seeds/`: catálogos y datos iniciales. Los archivos con prefijo `99-` son solo datos mock y no pertenecen al despliegue normal.
+- `database/tables/`: definición canónica de tablas, en orden de creación; incluye claves, restricciones y valores por defecto.
+- `database/tables/indexes/`: índices adicionales que se crean después de las tablas de las que dependen.
+- `database/procedures/`: todos los procedimientos almacenados, agrupados por dominio funcional.
+- `database/types/`: tipos definidos por el usuario requeridos por procedimientos.
+- `database/seeds/`: catálogos y datos iniciales. Los archivos con prefijo `99-` son solo datos mock y no pertenecen al despliegue normal.
 - `database/`: manifiestos SQLCMD, procedimientos, semillas y seguridad asociados a entregas específicas.
-- `docs/`: documentación técnica, integraciones, modelo de entidades y snapshots históricos.
+- `database/docs/`: documentación técnica, integraciones, modelo de entidades y snapshots históricos.
 - `openspec/`: especificaciones y registro de cambios funcionales.
 
-Los archivos `docs/db/entities/*/00-current-schema.sql` son snapshots históricos; no son la fuente canónica para desplegar el esquema.
+Los archivos `database/docs/db/entities/*/00-current-schema.sql` son snapshots históricos; no son la fuente canónica para desplegar el esquema.
 
-El [diagrama entidad-relación](docs/db/ER_DIAGRAM.md) muestra gráficamente las tablas y claves foráneas documentadas.
+El [diagrama entidad-relación](database/docs/db/ER_DIAGRAM.md) muestra gráficamente las tablas y claves foráneas documentadas.
 
 ## Entrega para ejecución
 

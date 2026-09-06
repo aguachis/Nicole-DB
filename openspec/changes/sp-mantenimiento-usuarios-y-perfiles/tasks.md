@@ -1,8 +1,8 @@
 ## 1. Preparacion y contratos
 
-- [x] 1.1 Revisar convenciones en `docs/db/02-conventions.md` y definir plantilla unica de respuesta (`result_code`, `result_message`, dataset).
+- [x] 1.1 Revisar convenciones en `database/docs/db/02-conventions.md` y definir plantilla unica de respuesta (`result_code`, `result_message`, dataset).
 - [x] 1.2 Levantar matriz de validaciones de negocio para usuario, perfil y relacion usuario-empresa.
-- [x] 1.3 Definir nomenclatura final de SP y su ubicacion en `procedures/auth/` y `procedures/profile/`.
+- [x] 1.3 Definir nomenclatura final de SP y su ubicacion en `database/procedures/auth/` y `database/procedures/profile/`.
 
 ## 2. Implementacion de SP de mantenimiento de usuarios
 
@@ -19,12 +19,12 @@
 
 ## 4. Documentacion de integracion para API
 
-- [x] 4.1 Crear/actualizar markdown de integracion en `docs/db/integrations/` para SP de usuarios y perfiles.
+- [x] 4.1 Crear/actualizar markdown de integracion en `database/docs/db/integrations/` para SP de usuarios y perfiles.
 - [x] 4.2 Incluir contratos de entrada/salida por SP y catalogo de codigos de error funcional.
 - [x] 4.3 Agregar ejemplos de consumo desde servicios API y mapeo sugerido a respuestas HTTP.
 
 ## 5. Verificacion y cierre
 
 - [x] 5.1 Validar que todos los SP cumplan contrato de respuesta estandar y escenarios definidos en specs.
-- [x] 5.2 Validar consistencia documental cruzada con `docs/db/02-conventions.md` y documentos de integracion existentes.
+- [x] 5.2 Validar consistencia documental cruzada con `database/docs/db/02-conventions.md` y documentos de integracion existentes.
 - [x] 5.3 Ejecutar `openspec validate --change "sp-mantenimiento-usuarios-y-perfiles"` y corregir hallazgos.

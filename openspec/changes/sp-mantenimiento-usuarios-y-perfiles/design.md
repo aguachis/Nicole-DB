@@ -18,8 +18,8 @@ El proyecto documenta entidades de seguridad (`app-user`, `profile`, `user-compa
 ## Decisions
 
 1. Agrupar los SP en dominios funcionales:
-- Dominio de usuario en `procedures/auth/`.
-- Dominio de perfiles/relaciones en `procedures/profile/`.
+- Dominio de usuario en `database/procedures/auth/`.
+- Dominio de perfiles/relaciones en `database/procedures/profile/`.
 Razon: mantiene coherencia con la organizacion documental existente.
 
 2. Estandarizar firma de respuesta en todos los SP:
@@ -36,7 +36,7 @@ Razon: simplifica manejo de errores y telemetria en API.
 Razon: evita inconsistencias cuando distintos consumidores invocan la base.
 
 4. Publicar un documento de integracion API dedicado:
-- Ubicado en `docs/db/integrations/`.
+- Ubicado en `database/docs/db/integrations/`.
 - Incluye contratos de entrada/salida, ejemplos de ejecucion y matriz de errores.
 Razon: reducir ambiguedad en implementacion de capa de servicios.
 

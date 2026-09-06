@@ -10,13 +10,13 @@ context: |
 	Inventario y facturacion aun no tienen DDL definitivo; no asumir tablas no creadas.
 
 	Fuentes de verdad del proyecto:
-	- docs/db/01-project-scope-and-delivery.md
-	- docs/db/BACKEND_DATABASE_CONTEXT.md
-	- docs/db/02-conventions.md
-	- docs/db/03-new-database-working-document.md
-	- docs/db/entities/**
-	- docs/db/stored-procedures/**
-	- docs/db/integrations/**
+	- database/docs/db/01-project-scope-and-delivery.md
+	- database/docs/db/BACKEND_DATABASE_CONTEXT.md
+	- database/docs/db/02-conventions.md
+	- database/docs/db/03-new-database-working-document.md
+	- database/docs/db/entities/**
+	- database/docs/db/stored-procedures/**
+	- database/docs/db/integrations/**
 
 	Modelo de seguridad vigente:
 	- Autenticacion por usuario.
@@ -44,7 +44,7 @@ rules:
 		- Homologar fechas a datetime2 cuando el contexto lo permita.
 	sql:
 		- Generar SQL compatible con SQL Server (T-SQL), esquema dbo y nombres explicitos.
-		- Antes de proponer cambios, revisar scripts y contexto vigente en docs/db/entities y docs/db/stored-procedures.
+		- Antes de proponer cambios, revisar scripts y contexto vigente en database/docs/db/entities y database/docs/db/stored-procedures.
 		- Cada indice debe responder a un patron real de consulta, FK, join o filtro frecuente.
 		- Evitar indices redundantes o duplicados.
 		- En SPs: documentar objetivo, parametros, tablas afectadas, transacciones y manejo de errores.
