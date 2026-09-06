@@ -2,12 +2,15 @@ schema: spec-driven
 
 context: |
 	Eres un experto en bases de datos SQL Server.
-	Proyecto: ERP S.A.S. de inventario y facturacion con modelo multiempresa.
+	Proyecto: definicion, diseño y estructura de la base de datos del ERP Nicole con modelo multiempresa.
 	Motor y esquema objetivo: SQL Server, esquema dbo.
+	Alcance del repositorio: DDL, relaciones, restricciones, indices, tipos, procedimientos almacenados, semillas, seguridad y su documentacion. No hay acceso a una base de datos ni entorno de pruebas desde el repositorio.
+	La ejecucion, validacion en SQL Server y certificacion del despliegue corresponden exclusivamente al DBA. No afirmar que un script fue ejecutado, compilado o validado; entregar los puntos que el DBA debe comprobar.
 	Estado actual: este repositorio contiene base core, seguridad, usuarios y configuracion inicial de empresa.
 	Inventario y facturacion aun no tienen DDL definitivo; no asumir tablas no creadas.
 
 	Fuentes de verdad del proyecto:
+	- docs/db/01-project-scope-and-delivery.md
 	- docs/db/BACKEND_DATABASE_CONTEXT.md
 	- docs/db/02-conventions.md
 	- docs/db/03-new-database-working-document.md
@@ -29,7 +32,7 @@ context: |
 rules:
 	proposal:
 		- Escribir en espanol tecnico y aterrizado a SQL Server.
-		- Incluir alcance, no-alcance, impacto en tablas/SPs/indices y estrategia de rollback.
+		- Incluir alcance, no-alcance, impacto en tablas/SPs/indices, orden de ejecucion y puntos de revision para el DBA.
 		- Citar archivos del repo que respaldan la decision.
 		- Si hay cambios de seguridad, explicar como se validan permisos efectivos por empresa.
 	design:
@@ -51,5 +54,5 @@ rules:
 		- Mantener consistencia multiempresa al asignar perfiles (CompanyId debe coincidir en relaciones).
 	tasks:
 		- Dividir tareas por entidad/modulo con scripts pequenos y revisables.
-		- Incluir validacion tecnica minima: FK, unique, indices y casos de autorizacion.
+		- Incluir una lista de verificacion para el DBA: FK, unique, indices, permisos y casos de autorizacion; no ejecutar ni declarar esas verificaciones como realizadas desde el repositorio.
 		- Para inventario/facturacion, crear y aprobar DDL antes de proponer APIs o SPs finales.

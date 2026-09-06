@@ -14,6 +14,12 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 - Autenticacion: por usuario
 - Autorizacion: por permisos efectivos dentro de la empresa activa
 
+## Instalacion inicial vigente
+
+Nicole se crea sobre una base vacia. El punto de entrada es `database/20260905_001_crear_bd_registro_global_clientes.sql` ejecutado en SQLCMD Mode desde la raiz del repositorio. Define el modelo final: `Person` no guarda identificacion, `PersonIdentification` es global y `Client` contiene solo la relacion comercial y el contacto por `Company`.
+
+Los archivos bajo `database/migrations/`, `database/validation/`, `database/tests/` y `database/rollback/` no pertenecen a la instalacion inicial y no deben ejecutarse.
+
 ## Orden de Ejecucion Recomendado
 
 1. `tables/00-create-table-entitystatus.sql`
@@ -52,6 +58,13 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 | `Permission` | Seguridad | Catalogo de permisos funcionales usados por la app. | `tables/09-create-table-permission.sql` |
 | `ProfilePermission` | Seguridad | Permisos asignados a perfiles. | `tables/10-create-table-profile-permission.sql` |
 | `UserCompanyProfile` | Seguridad | Perfil asignado a un usuario dentro de una empresa. | `tables/12-create-table-user-company-profile.sql` |
+| `PersonIdentification` | Registro global | Identidad normalizada y verificable de una persona. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
+| `TaxRegistration` | Registro global | Datos tributarios verificados de una identidad RUC. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
+| `EconomicActivity` | Registro global | Catálogo global de actividades económicas. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
+| `TaxRegistrationEconomicActivity` | Registro global | Actividades verificadas de un registro tributario. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
+| `RegistryProvider` | Registro global | Proveedor y TTL de verificación, sin secretos. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
+| `PersonVerification` | Registro global | Historial de resultados y vigencias sin payload crudo. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
+| `RegistryAccessAudit` | Seguridad | Auditoría mínima de acceso al registro global. | `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql` |
 
 ## Scripts Complementarios
 
@@ -69,6 +82,15 @@ El repositorio actualmente contiene la base core multiempresa, seguridad, usuari
 | Integracion | Endpoint sugerido | Documento |
 | --- | --- | --- |
 | Registro inicial de empresa | `POST /api/auth/register` | `docs/db/integrations/INTEGRACION_API_AUTH_REGISTER.md` |
+| Registro tributario y clientes por tenant | `POST /api/registry/resolve`, `POST/PATCH /api/clients` | `docs/db/integrations/INTEGRACION_API_REGISTRY_CLIENTS.md` |
+
+## Registro global de clientes
+
+La identidad fiscal es global en `PersonIdentification`; el cliente comercial sigue siendo local a una empresa en `Client`. El backend debe extraer `UserId` y `CompanyId` del contexto autenticado y pasarlos a todos los procedimientos. No acepta esos valores como autoridad de un payload del usuario.
+
+La resolución se limita a coincidencia exacta de tipo y valor. Primero llama a `dbo.usp_Registry_ResolveIdentification`; si devuelve `202`, el adaptador externo del backend consulta el proveedor, aplica sus propios timeout/reintentos y persiste solo campos estructurados mediante `dbo.usp_Registry_PersistVerification`. SQL no realiza HTTP ni conserva secretos o JSON del proveedor.
+
+Para el alta, cambio y baja de clientes usa `dbo.usp_Client_Create`, `dbo.usp_Client_Update` y `dbo.usp_Client_Deactivate`. La dirección de facturación, teléfono y correo son entradas locales obligatorias. `TaxRegistration.TaxAddress` puede mostrarse como sugerencia, pero nunca se copia automáticamente a `Client.BillingAddress`.
 
 ## Relaciones Principales
 
@@ -153,7 +175,7 @@ Estas entidades son necesarias para el objetivo del producto, pero aun no existe
 | Modulo | Entidades pendientes |
 | --- | --- |
 | Inventario | `Product`, `ProductCategory`, `Brand`, `UnitOfMeasure`, `Warehouse`, `WarehouseProduct`, `StockMovement` |
-| Facturacion | `Customer`, `Invoice`, `InvoiceDetail`, `Payment`, `Tax`, `ElectronicDocumentStatus` |
+| Facturacion | `Invoice`, `InvoiceDetail`, `Payment`, `Tax`, `ElectronicDocumentStatus`; el cliente comercial queda definido por esta migracion y la factura conserva un contrato futuro de snapshot. |
 
 Antes de generar APIs REST de inventario o facturacion, primero se debe crear y aprobar el DDL de estas tablas y sus stored procedures.
 

@@ -1,62 +1,30 @@
-/*
-Script: 01-create-table-identification-type.sql
-Entidad: dbo.IdentificationType
-Fuente: Script actual de BD Nicole recibido el 2026-06-19
-Objetivo:
-    Crear la tabla IdentificationType segun la estructura actualmente existente en BD.
-
-Concepto:
-    IdentificationType cataloga los tipos de identificacion usados por Person.
-
-Dependencias:
-    - dbo.EntityStatus(StatusCode)
-*/
-
+/* Initial schema: identification policy catalog. */
 SET ANSI_NULLS ON;
 GO
-
 SET QUOTED_IDENTIFIER ON;
-GO
-
-IF OBJECT_ID(N'dbo.IdentificationType', N'U') IS NOT NULL
-BEGIN
-    PRINT 'La tabla dbo.IdentificationType ya existe.';
-    RETURN;
-END
 GO
 
 CREATE TABLE dbo.IdentificationType
 (
-    IdentificationTypeId CHAR(2) NOT NULL,
-    Name NVARCHAR(50) NOT NULL,
-    Description NVARCHAR(150) NULL,
-    Status CHAR(1) NOT NULL,
-    CreatedAt DATETIME2(0) NOT NULL,
-    UpdatedAt DATETIME2(0) NULL,
-
-    CONSTRAINT PK_IdentificationType
-        PRIMARY KEY CLUSTERED (IdentificationTypeId),
-
-    CONSTRAINT UQ_IdentificationType_Name
-        UNIQUE NONCLUSTERED (Name)
+    IdentificationTypeId char(2) NOT NULL,
+    Code varchar(32) NOT NULL,
+    Name nvarchar(50) NOT NULL,
+    Description nvarchar(150) NULL,
+    MinLength tinyint NOT NULL,
+    MaxLength tinyint NOT NULL,
+    IsNumericOnly bit NOT NULL,
+    AllowsNaturalPerson bit NOT NULL,
+    AllowsLegalEntity bit NOT NULL,
+    IsBillingAllowed bit NOT NULL,
+    IsActive bit NOT NULL CONSTRAINT DF_IdentificationType_IsActive DEFAULT (1),
+    Status char(1) NOT NULL CONSTRAINT DF_IdentificationType_Status DEFAULT ('A'),
+    CreatedAt datetime2(0) NOT NULL CONSTRAINT DF_IdentificationType_CreatedAt DEFAULT (SYSDATETIME()),
+    UpdatedAt datetime2(0) NULL,
+    CONSTRAINT PK_IdentificationType PRIMARY KEY CLUSTERED (IdentificationTypeId),
+    CONSTRAINT UQ_IdentificationType_Code UNIQUE NONCLUSTERED (Code),
+    CONSTRAINT UQ_IdentificationType_Name UNIQUE NONCLUSTERED (Name),
+    CONSTRAINT CK_IdentificationType_Length CHECK (MinLength > 0 AND MaxLength >= MinLength),
+    CONSTRAINT CK_IdentificationType_Applicability CHECK (AllowsNaturalPerson=1 OR AllowsLegalEntity=1),
+    CONSTRAINT FK_IdentificationType_Status FOREIGN KEY (Status) REFERENCES dbo.EntityStatus(StatusCode)
 );
-GO
-
-ALTER TABLE dbo.IdentificationType
-ADD CONSTRAINT DF_IdentificationType_Status
-    DEFAULT ('A') FOR Status;
-GO
-
-ALTER TABLE dbo.IdentificationType
-ADD CONSTRAINT DF_IdentificationType_CreatedAt
-    DEFAULT (SYSDATETIME()) FOR CreatedAt;
-GO
-
-ALTER TABLE dbo.IdentificationType WITH CHECK
-ADD CONSTRAINT FK_IdentificationType_Status
-    FOREIGN KEY (Status)
-    REFERENCES dbo.EntityStatus (StatusCode);
-GO
-
-ALTER TABLE dbo.IdentificationType CHECK CONSTRAINT FK_IdentificationType_Status;
 GO

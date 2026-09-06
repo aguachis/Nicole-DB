@@ -18,11 +18,11 @@ CREATE TABLE [dbo].[CompanyEmissionPoint](
 	[CreatedAt] [datetime2](0) NOT NULL,
 	[UpdatedBy] [nvarchar](80) NULL,
 	[UpdatedAt] [datetime2](0) NULL,
- CONSTRAINT [PK_CompanyEmissionPoint] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_CompanyEmissionPoint] PRIMARY KEY CLUSTERED
 (
 	[CompanyEmissionPointId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
- CONSTRAINT [UQ_CompanyEmissionPoint_Branch_EmissionPointCode] UNIQUE NONCLUSTERED 
+ CONSTRAINT [UQ_CompanyEmissionPoint_Branch_EmissionPointCode] UNIQUE NONCLUSTERED
 (
 	[CompanyBranchId] ASC,
 	[EmissionPointCode] ASC

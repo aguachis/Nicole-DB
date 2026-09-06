@@ -18,11 +18,11 @@ CREATE TABLE [dbo].[UserCompanyProfile](
 	[CreatedAt] [datetime2](0) NOT NULL,
 	[UpdatedBy] [nvarchar](80) NULL,
 	[UpdatedAt] [datetime2](0) NULL,
- CONSTRAINT [PK_UserCompanyProfile] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_UserCompanyProfile] PRIMARY KEY CLUSTERED
 (
 	[UserCompanyProfileId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
- CONSTRAINT [UQ_UserCompanyProfile_UserCompany_Profile] UNIQUE NONCLUSTERED 
+ CONSTRAINT [UQ_UserCompanyProfile_UserCompany_Profile] UNIQUE NONCLUSTERED
 (
 	[UserCompanyId] ASC,
 	[ProfileId] ASC

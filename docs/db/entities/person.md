@@ -78,3 +78,11 @@ Representa personas naturales y juridicas en una sola entidad canonica. Es usada
 
 - La estructura actual no declara indices adicionales fuera de la PK y el unique por `IdentificationType + Identification`.
 - La estructura actual no declara un check directo para limitar `Status` a `A`/`I`; esa validez depende de la FK a `EntityStatus`.
+
+## Extensión: registro global de clientes (2026-09-05)
+
+La migración conserva las columnas legacy `IdentificationType` e `Identification` para compatibilidad, pero la identidad canónica pasa a `dbo.PersonIdentification`. Agrega `LegalName nvarchar(250)`, `TradeName nvarchar(250)` y `PersonKind char(1)`; estos tres valores se hacen obligatorios solamente en la segunda fase, cuando el preflight y el backfill no tengan bloqueos.
+
+`PersonKind` admite `N` (natural) o `J` (jurídica). Los datos de contacto, crédito y dirección de facturación no pertenecen a `Person`: se almacenan por tenant en `Client`. La migración no fusiona personas aunque dos valores legacy normalizados entren en conflicto; los registra para resolución manual en `RegistryBackfillConflict`.
+
+DDL: `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql`, guardas: `database/migrations/20260905_004_centralizar_registro_global_clientes_indexes_guards.sql`.

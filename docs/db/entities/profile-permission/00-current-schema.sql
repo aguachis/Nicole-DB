@@ -17,11 +17,11 @@ CREATE TABLE [dbo].[ProfilePermission](
 	[CreatedAt] [datetime2](0) NOT NULL,
 	[UpdatedBy] [nvarchar](80) NULL,
 	[UpdatedAt] [datetime2](0) NULL,
- CONSTRAINT [PK_ProfilePermission] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_ProfilePermission] PRIMARY KEY CLUSTERED
 (
 	[ProfilePermissionId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
- CONSTRAINT [UQ_ProfilePermission_Profile_Permission] UNIQUE NONCLUSTERED 
+ CONSTRAINT [UQ_ProfilePermission_Profile_Permission] UNIQUE NONCLUSTERED
 (
 	[ProfileId] ASC,
 	[PermissionId] ASC

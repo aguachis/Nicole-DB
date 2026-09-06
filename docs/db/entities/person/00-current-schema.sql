@@ -30,11 +30,11 @@ CREATE TABLE [dbo].[Person](
 	[CreatedAt] [datetime2](0) NOT NULL,
 	[UpdatedBy] [nvarchar](80) NULL,
 	[UpdatedAt] [datetime2](0) NULL,
- CONSTRAINT [PK_Person] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_Person] PRIMARY KEY CLUSTERED
 (
 	[PersonId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
- CONSTRAINT [UQ_Person_IdentificationType_Identification] UNIQUE NONCLUSTERED 
+ CONSTRAINT [UQ_Person_IdentificationType_Identification] UNIQUE NONCLUSTERED
 (
 	[IdentificationType] ASC,
 	[Identification] ASC

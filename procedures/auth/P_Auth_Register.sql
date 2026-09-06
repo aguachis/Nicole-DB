@@ -116,10 +116,10 @@ BEGIN
         )
             RAISERROR('CompanyIdentification already exists.', 16, 1);
 
-        SELECT @PersonId = p.PersonId
-        FROM dbo.Person p
-        WHERE p.IdentificationType = @PersonIdentificationType
-          AND p.Identification = @PersonIdentification;
+        SELECT @PersonId = pi.PersonId
+        FROM dbo.PersonIdentification pi
+        WHERE pi.IdentificationTypeId = @PersonIdentificationType
+          AND pi.NormalizedIdentification = dbo.fn_NormalizeIdentification(@PersonIdentification);
 
         IF @PersonId IS NULL
         BEGIN
@@ -128,13 +128,9 @@ BEGIN
             INSERT INTO dbo.Person
             (
                 PersonId,
-                IdentificationType,
-                Identification,
-                PersonType,
-                FirstName,
-                LastName,
-                Email,
-                Phone,
+                PersonKind,
+                LegalName,
+                TradeName,
                 Status,
                 CreatedBy,
                 CreatedAt
@@ -142,17 +138,16 @@ BEGIN
             VALUES
             (
                 @PersonId,
-                @PersonIdentificationType,
-                @PersonIdentification,
                 'N',
-                @PersonName,
-                ISNULL(@PersonLastName, @PersonName),
-                @Email,
-                @PersonPhone,
+                CONCAT(@PersonName, CASE WHEN @PersonLastName IS NULL THEN N'' ELSE N' '+@PersonLastName END),
+                NULL,
                 'A',
                 @CreatedBy,
                 SYSDATETIME()
             );
+
+            INSERT dbo.PersonIdentification(PersonId,IdentificationTypeId,Identification,IsPrimary,CreatedByUserId)
+            VALUES(@PersonId,@PersonIdentificationType,@PersonIdentification,1,NULL);
         END
 
         SET @UserId = NEWID();
@@ -340,7 +335,12 @@ BEGIN
             (N'profile.update', N'Actualizar perfiles', N'Permite actualizar perfiles', N'profile'),
             (N'profile.assign', N'Asignar perfiles', N'Permite asignar perfiles a usuarios', N'profile'),
             (N'permission.read', N'Consultar permisos', N'Permite consultar permisos', N'permission'),
-            (N'permission.assign', N'Asignar permisos', N'Permite asignar permisos a perfiles', N'permission');
+            (N'permission.assign', N'Asignar permisos', N'Permite asignar permisos a perfiles', N'permission'),
+            (N'client.read', N'Consultar clientes', N'Consulta clientes y registro exacto', N'client'),
+            (N'client.create', N'Crear clientes', N'Crea relaciones cliente por empresa', N'client'),
+            (N'client.update', N'Actualizar clientes', N'Actualiza datos comerciales locales', N'client'),
+            (N'client.deactivate', N'Desactivar clientes', N'Desactiva clientes sin borrarlos', N'client'),
+            (N'client.verify', N'Verificar identidad fiscal', N'Permite verificar identidad fiscal', N'client');
 
         INSERT INTO dbo.Permission
         (

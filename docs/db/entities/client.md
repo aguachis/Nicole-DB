@@ -76,3 +76,13 @@ Representa el snapshot comercial de un cliente para una empresa especifica. Perm
 
 - `Client` se define como snapshot comercial: los datos de nombre/identificacion pueden diferir de `Person` por historico de operacion.
 - La aplicacion debe documentar la politica de sincronizacion (manual, automatica o solo alta inicial) entre `Person` y `Client`.
+
+## Extensión: registro global de clientes (2026-09-05)
+
+`Client` queda explícitamente delimitado como la relación comercial por empresa entre `Company` y `Person`. La migración agrega `DefaultBillingIdentificationId`, `BillingAddress`, `Phone`, `Email`, `CreditLimit` y `PaymentTermDays`. Los cuatro primeros datos locales serán obligatorios al aplicar la segunda fase; crédito y plazo son opcionales y no negativos.
+
+La FK compuesta `(DefaultBillingIdentificationId, PersonId)` hacia `PersonIdentification(PersonIdentificationId, PersonId)` impide usar para facturación la identidad de otra persona. El tipo debe estar activo, permitido para facturación y no tener estado `Invalid`. Se agrega `UQ_Client_Client_Company (ClientId, CompanyId)` como clave candidata obligatoria para una futura FK de factura, que siempre incluirá el tenant.
+
+Las columnas legacy `Identification`, `BusinessName` y `TradeName` permanecen durante la transición con marca deprecada; sus valores se mantienen por compatibilidad y no son la fuente canónica. `TaxRegistration.TaxAddress` es una sugerencia verificable, nunca una copia automática a `BillingAddress`.
+
+DDL: `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql`; restricciones e índices finales: `database/migrations/20260905_004_centralizar_registro_global_clientes_indexes_guards.sql`.

@@ -65,3 +65,11 @@ Catalogo de tipos de identificacion usados por `Person`. Permite distinguir RUC,
 - La estructura actual no declara indices adicionales fuera de la PK y el unique por `Name`.
 - La estructura actual no declara un check directo para limitar `Status` a `A`/`I`; esa validez depende de la FK a `EntityStatus`.
 - Los datos iniciales se mantienen en `seeds/99-insert-mock-data.sql`.
+
+## Extensión: registro global de clientes (2026-09-05)
+
+El identificador físico `IdentificationTypeId char(2)` se conserva como clave para compatibilidad. La migración agrega los metadatos operativos `Code`, `MinLength`, `MaxLength`, `IsNumericOnly`, `AllowsNaturalPerson`, `AllowsLegalEntity`, `IsBillingAllowed` e `IsActive`.
+
+`Code` es el código estable del contrato backend (`CEDULA`, `RUC`, etc.). Los procedimientos reciben ese código y resuelven el `IdentificationTypeId` internamente. Las validaciones de longitud, formato y clase de persona se aplican a `PersonIdentification`; no deben ser reimplementadas por un consumidor SQL. Un tipo asociado a un `TaxRegistration` no puede recodificarse desde `RUC`.
+
+DDL: `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql`; metadatos iniciales: `database/seeds/20260905_001_centralizar_registro_global_clientes_identification_types.sql`.

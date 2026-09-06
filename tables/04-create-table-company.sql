@@ -34,6 +34,7 @@ CREATE TABLE dbo.Company
     Identification NVARCHAR(20) NOT NULL,
     TradeName NVARCHAR(150) NULL,
     BusinessName NVARCHAR(200) NOT NULL,
+    MainAddress NVARCHAR(500) NULL,
     Email NVARCHAR(150) NULL,
     IsAccountingRequired BIT NOT NULL,
     SpecialTaxpayer NVARCHAR(50) NULL,

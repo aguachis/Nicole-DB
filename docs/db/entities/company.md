@@ -76,3 +76,11 @@ Representa la empresa legal dentro del modelo multiempresa del S.A.S. Sirve como
 
 - La estructura actual no contiene `OwnerPersonId`.
 - Si el registro inicial necesita guardar propietario/titular distinto del representante, debe definirse una migracion futura o una relacion separada.
+
+## Extensión: registro global de clientes (2026-09-05)
+
+La migración `centralizar-registro-global-clientes` agrega `MainAddress nvarchar(500) NULL` a `dbo.Company`. Es la dirección principal declarada por la empresa emisora y no se rellena desde un proveedor tributario ni desde un cliente.
+
+La tabla mantiene su rol de tenant: `Client.CompanyId` y `RegistryAccessAudit.CompanyId` deben referenciar una empresa existente. Las consultas al registro global se autorizan en este ámbito; una identidad global nunca se vuelve propiedad de una empresa por haber sido consultada desde ella.
+
+DDL: `database/migrations/20260905_002_centralizar_registro_global_clientes_forward.sql`.
