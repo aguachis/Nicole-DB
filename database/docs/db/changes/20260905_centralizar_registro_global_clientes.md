@@ -34,9 +34,9 @@ erDiagram
 
 ## Contrato backend/API
 
-- `POST /registry/resolve`: recibe tipo y valor exactos, llama primero a `usp_Registry_ResolveIdentification` con `UserId` y `CompanyId` autenticados. Si devuelve refresco requerido, el backend consulta el proveedor y persiste la respuesta mediante `usp_Registry_PersistVerification`.
+- `POST /registry/resolve`: recibe tipo y valor exactos, llama primero a `P_Registry_ResolveIdentification` con `UserId` y `CompanyId` autenticados. Si devuelve refresco requerido, el backend consulta el proveedor y persiste la respuesta mediante `P_Registry_PersistVerification`.
 - Los adaptadores de proveedores aplican timeout, reintento y normalización fuera de SQL. Sus secretos viven en un gestor de secretos, no en `RegistryProvider`.
-- `POST /clients`, `PATCH /clients/{clientId}` y `POST /clients/{clientId}/deactivate` usan los procedimientos `usp_Client_*` con `CompanyId` del contexto autorizado. No existe endpoint global por nombre o identificación parcial.
+- `POST /clients`, `PATCH /clients/{clientId}` y `POST /clients/{clientId}/deactivate` usan los procedimientos `dbo.P_Client_*` con `CompanyId` del contexto autorizado. No existe endpoint global por nombre o identificación parcial.
 - La UI puede mostrar `TaxAddress` como sugerencia, pero debe exigir la confirmación y entrada local explícita antes de enviar `BillingAddress`.
 
 ## Contrato de factura futuro

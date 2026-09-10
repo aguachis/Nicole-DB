@@ -31,6 +31,7 @@ CREATE OR ALTER PROCEDURE dbo.P_User_Create
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
     DECLARE @UserId UNIQUEIDENTIFIER;
     DECLARE @ExistingPersonStatus CHAR(1);
@@ -120,13 +121,29 @@ BEGIN
                 SELECT CAST(1001 AS INT) AS result_code, N'PersonIdentification is required when PersonId is null.' AS result_message;
                 RETURN;
             END;
+            IF NOT EXISTS
+            (
+                SELECT 1
+                FROM dbo.IdentificationType it
+                WHERE it.IdentificationTypeId = @PersonIdentificationType
+                  AND it.IsActive = 1
+                  AND it.AllowsNaturalPerson = 1
+                  AND LEN(dbo.fn_NormalizeIdentification(@PersonIdentification)) BETWEEN it.MinLength AND it.MaxLength
+                  AND (it.IsNumericOnly = 0 OR dbo.fn_NormalizeIdentification(@PersonIdentification) NOT LIKE N'%[^0-9]%')
+            )
+            BEGIN
+                ROLLBACK TRAN;
+                SELECT CAST(1001 AS INT) AS result_code, N'PersonIdentification does not satisfy its active natural-person type policy.' AS result_message;
+                RETURN;
+            END;
 
             SELECT
                 @PersonId = p.PersonId,
                 @ExistingPersonStatus = p.Status
-            FROM dbo.Person p
-            WHERE p.IdentificationType = @PersonIdentificationType
-              AND p.Identification = @PersonIdentification;
+            FROM dbo.PersonIdentification pi WITH (UPDLOCK, HOLDLOCK)
+            INNER JOIN dbo.Person p ON p.PersonId = pi.PersonId
+            WHERE pi.IdentificationTypeId = @PersonIdentificationType
+              AND pi.NormalizedIdentification = dbo.fn_NormalizeIdentification(@PersonIdentification);
 
             IF @PersonId IS NOT NULL AND @ExistingPersonStatus <> 'A'
             BEGIN
@@ -156,14 +173,9 @@ BEGIN
                 INSERT INTO dbo.Person
                 (
                     PersonId,
-                    IdentificationType,
-                    Identification,
-                    PersonType,
-                    LastName,
-                    MiddleName,
-                    FirstName,
-                    Phone,
-                    Email,
+                    PersonKind,
+                    LegalName,
+                    TradeName,
                     Status,
                     CreatedBy,
                     CreatedAt
@@ -171,17 +183,27 @@ BEGIN
                 VALUES
                 (
                     @PersonId,
-                    @PersonIdentificationType,
-                    @PersonIdentification,
                     'N',
-                    @PersonLastName,
-                    @PersonMiddleName,
-                    @PersonFirstName,
-                    @PersonPhone,
-                    @Email,
+                    LTRIM(RTRIM(CONCAT(@PersonFirstName, N' ', COALESCE(@PersonMiddleName + N' ', N''), @PersonLastName))),
+                    NULL,
                     'A',
                     @CreatedBy,
                     SYSDATETIME()
+                );
+
+                INSERT INTO dbo.PersonIdentification
+                (
+                    PersonId,
+                    IdentificationTypeId,
+                    Identification,
+                    IsPrimary
+                )
+                VALUES
+                (
+                    @PersonId,
+                    @PersonIdentificationType,
+                    @PersonIdentification,
+                    1
                 );
             END;
         END;

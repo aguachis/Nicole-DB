@@ -10,7 +10,7 @@ IF TYPE_ID(N'dbo.RegistryEconomicActivityListType') IS NULL
         IsPrimary bit NOT NULL
     );');
 GO
-CREATE OR ALTER PROCEDURE dbo.usp_Registry_PersistVerification
+CREATE OR ALTER PROCEDURE dbo.P_Registry_PersistVerification
     @UserId uniqueidentifier,
     @CompanyId uniqueidentifier,
     @ProviderCode varchar(50),
@@ -98,12 +98,8 @@ BEGIN
       IF @PersonId IS NULL
       BEGIN
         SET @PersonId=NEWID();
-        INSERT dbo.Person(PersonId,IdentificationType,Identification,PersonType,LastName,FirstName,BusinessName,Status,CreatedBy,CreatedAt,LegalName,TradeName,PersonKind)
-        VALUES(@PersonId,@TypeId,@Identification,@PersonKind,
-               CASE WHEN @PersonKind='N' THEN @LegacyLastName ELSE NULL END,
-               CASE WHEN @PersonKind='N' THEN @LegacyFirstName ELSE NULL END,
-               CASE WHEN @PersonKind='J' THEN @LegalName ELSE NULL END,
-               'A',@LegacyActor,@Now,@LegalName,@TradeName,@PersonKind);
+        INSERT dbo.Person(PersonId,PersonKind,LegalName,TradeName,Status,CreatedBy,CreatedAt)
+        VALUES(@PersonId,@PersonKind,@LegalName,@TradeName,'A',@LegacyActor,@Now);
       END
       ELSE
       BEGIN
@@ -118,25 +114,25 @@ BEGIN
         SET @PersonIdentificationId=SCOPE_IDENTITY();
       END
       ELSE UPDATE dbo.PersonIdentification SET VerificationStatus=CASE @VerificationResult WHEN 'Verified' THEN 'Verified' WHEN 'NotFound' THEN 'NotFound' WHEN 'Invalid' THEN 'Invalid' ELSE 'Error' END,LastVerifiedAt=@QueriedAt,ExpiresAt=@ExpiresAt,UpdatedAt=@Now,UpdatedByUserId=@UserId WHERE PersonIdentificationId=@PersonIdentificationId;
-      INSERT dbo.PersonVerification(PersonIdentificationId,RegistryProviderId,Result,QueriedAt,ExpiresAt,PayloadHash,ProviderRequestId,FailureCode,CorrelationId,CreatedAt,CreatedByUserId)
-      VALUES(@PersonIdentificationId,@ProviderId,@VerificationResult,@QueriedAt,@ExpiresAt,@PayloadHash,@ProviderRequestId,@FailureCode,@CorrelationId,@Now,@UserId);
+      INSERT dbo.PersonVerification(PersonIdentificationId,RegistryProviderId,Result,QueriedAt,ExpiresAt,PayloadHash,ProviderRequestId,FailureCode,CorrelationId)
+      VALUES(@PersonIdentificationId,@ProviderId,@VerificationResult,@QueriedAt,@ExpiresAt,@PayloadHash,@ProviderRequestId,@FailureCode,@CorrelationId);
       IF @VerificationResult='Verified' AND EXISTS(SELECT 1 FROM dbo.IdentificationType WHERE IdentificationTypeId=@TypeId AND Code='RUC')
       BEGIN
         SELECT @TaxRegistrationId=TaxRegistrationId FROM dbo.TaxRegistration WITH(UPDLOCK,HOLDLOCK) WHERE PersonIdentificationId=@PersonIdentificationId;
         IF @TaxRegistrationId IS NULL
         BEGIN
-          INSERT dbo.TaxRegistration(PersonIdentificationId,TaxStatus,TaxpayerClass,TaxAddress,AccountingRequired,StartedAt,RegistryProviderId,Source,VerifiedAt,VerificationExpiresAt,CreatedAt,CreatedByUserId)
-          VALUES(@PersonIdentificationId,@TaxStatus,@TaxpayerClass,@TaxAddress,@AccountingRequired,@StartedAt,@ProviderId,'Provider',@QueriedAt,@ExpiresAt,@Now,@UserId);
+          INSERT dbo.TaxRegistration(PersonIdentificationId,TaxStatus,TaxpayerClass,TaxAddress,AccountingRequired,StartedAt,RegistryProviderId,Source,VerifiedAt,VerificationExpiresAt)
+          VALUES(@PersonIdentificationId,@TaxStatus,@TaxpayerClass,@TaxAddress,@AccountingRequired,@StartedAt,@ProviderId,'Provider',@QueriedAt,@ExpiresAt);
           SET @TaxRegistrationId=SCOPE_IDENTITY();
         END
-        ELSE UPDATE dbo.TaxRegistration SET TaxStatus=@TaxStatus,TaxpayerClass=@TaxpayerClass,TaxAddress=@TaxAddress,AccountingRequired=@AccountingRequired,StartedAt=@StartedAt,RegistryProviderId=@ProviderId,Source='Provider',VerifiedAt=@QueriedAt,VerificationExpiresAt=@ExpiresAt,UpdatedAt=@Now,UpdatedByUserId=@UserId WHERE TaxRegistrationId=@TaxRegistrationId;
-        INSERT dbo.EconomicActivity(ActivityCode,Name,IsActive,CreatedAt,CreatedByUserId)
-        SELECT a.ActivityCode,a.ActivityName,1,@Now,@UserId FROM @Activities a
+        ELSE UPDATE dbo.TaxRegistration SET TaxStatus=@TaxStatus,TaxpayerClass=@TaxpayerClass,TaxAddress=@TaxAddress,AccountingRequired=@AccountingRequired,StartedAt=@StartedAt,RegistryProviderId=@ProviderId,Source='Provider',VerifiedAt=@QueriedAt,VerificationExpiresAt=@ExpiresAt WHERE TaxRegistrationId=@TaxRegistrationId;
+        INSERT dbo.EconomicActivity(ActivityCode,Name,IsActive)
+        SELECT a.ActivityCode,a.ActivityName,1 FROM @Activities a
         WHERE NOT EXISTS(SELECT 1 FROM dbo.EconomicActivity ea WHERE ea.ActivityCode=a.ActivityCode);
-        UPDATE x SET ProviderActivityId=a.ProviderActivityId,IsPrimary=a.IsPrimary,VerifiedAt=@QueriedAt,UpdatedAt=@Now,UpdatedByUserId=@UserId
+        UPDATE x SET ProviderActivityId=a.ProviderActivityId,IsPrimary=a.IsPrimary,VerifiedAt=@QueriedAt
         FROM dbo.TaxRegistrationEconomicActivity x JOIN dbo.EconomicActivity ea ON ea.EconomicActivityId=x.EconomicActivityId JOIN @Activities a ON a.ActivityCode=ea.ActivityCode WHERE x.TaxRegistrationId=@TaxRegistrationId;
-        INSERT dbo.TaxRegistrationEconomicActivity(TaxRegistrationId,EconomicActivityId,ProviderActivityId,IsPrimary,VerifiedAt,CreatedAt,CreatedByUserId)
-        SELECT @TaxRegistrationId,ea.EconomicActivityId,a.ProviderActivityId,a.IsPrimary,@QueriedAt,@Now,@UserId FROM @Activities a JOIN dbo.EconomicActivity ea ON ea.ActivityCode=a.ActivityCode
+        INSERT dbo.TaxRegistrationEconomicActivity(TaxRegistrationId,EconomicActivityId,ProviderActivityId,IsPrimary,VerifiedAt)
+        SELECT @TaxRegistrationId,ea.EconomicActivityId,a.ProviderActivityId,a.IsPrimary,@QueriedAt FROM @Activities a JOIN dbo.EconomicActivity ea ON ea.ActivityCode=a.ActivityCode
         WHERE NOT EXISTS(SELECT 1 FROM dbo.TaxRegistrationEconomicActivity x WHERE x.TaxRegistrationId=@TaxRegistrationId AND x.EconomicActivityId=ea.EconomicActivityId);
       END;
       SET @AuditOutcome=CASE @VerificationResult WHEN 'Verified' THEN 'ProviderQueried' WHEN 'NotFound' THEN 'NotFound' WHEN 'Invalid' THEN 'Invalid' WHEN 'Unavailable' THEN 'Unavailable' ELSE 'Error' END;

@@ -18,6 +18,7 @@ BEGIN
         SELECT 1
         FROM dbo.AppUser u
         JOIN dbo.UserCompany uc ON uc.UserId=u.UserId AND uc.CompanyId=@CompanyId AND uc.Status='A'
+        JOIN dbo.Company c ON c.CompanyId=uc.CompanyId AND c.Status='A'
         JOIN dbo.UserCompanyProfile ucp ON ucp.UserCompanyId=uc.UserCompanyId AND ucp.CompanyId=uc.CompanyId AND ucp.Status='A'
         JOIN dbo.Profile pr ON pr.ProfileId=ucp.ProfileId AND pr.CompanyId=uc.CompanyId AND pr.Status='A'
         JOIN dbo.ProfilePermission pp ON pp.ProfileId=pr.ProfileId AND pp.Status='A'

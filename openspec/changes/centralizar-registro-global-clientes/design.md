@@ -16,7 +16,7 @@ Nicole se crea en una base SQL Server vacia. Los scripts son DDL definitivo, see
 
 ## Seguridad y SP
 
-SQL no realiza HTTP ni almacena secretos. El backend consulta al proveedor y llama `usp_Registry_PersistVerification` con datos estructurados. `usp_Registry_ResolveIdentification` solo permite coincidencia exacta y cache vigente. Los SP `usp_Client_*` exigen `UserId`, `CompanyId` y permiso efectivo; el rol `nicole_app` recibe `EXECUTE`, no DML directo global.
+SQL no realiza HTTP ni almacena secretos. El backend consulta al proveedor y llama `P_Registry_PersistVerification` con datos estructurados. `P_Registry_ResolveIdentification` solo permite coincidencia exacta y cache vigente. Los SP `P_Client_*` exigen `UserId`, `CompanyId` y permiso efectivo; el rol `nicole_app` recibe `EXECUTE`, no DML directo global.
 
 ## Orden de creacion
 

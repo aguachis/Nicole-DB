@@ -48,32 +48,49 @@ BEGIN
         u.CreatedAt,
         u.UpdatedAt,
         uc.CompanyId,
-        p.IdentificationType,
-        p.Identification,
-        p.FirstName,
-        p.LastName,
-        p.MiddleName,
-        p.Phone,
-        p.LastName AS lastName,
-        p.MiddleName AS middleName,
-        p.FirstName AS firstName,
-        p.Identification AS identification,
-        p.Phone AS phone
+        pi.IdentificationTypeId AS IdentificationType,
+        pi.Identification,
+        p.LegalName AS FirstName,
+        CAST(NULL AS NVARCHAR(80)) AS LastName,
+        CAST(NULL AS NVARCHAR(80)) AS MiddleName,
+        CAST(NULL AS NVARCHAR(50)) AS Phone,
+        CAST(NULL AS NVARCHAR(80)) AS lastName,
+        CAST(NULL AS NVARCHAR(80)) AS middleName,
+        p.LegalName AS firstName,
+        pi.Identification AS identification,
+        CAST(NULL AS NVARCHAR(50)) AS phone,
+        p.PersonKind,
+        p.LegalName,
+        p.TradeName,
+        pi.IdentificationTypeCode
     FROM dbo.AppUser u
     INNER JOIN dbo.Person p
         ON p.PersonId = u.PersonId
     LEFT JOIN dbo.UserCompany uc
         ON uc.UserId = u.UserId
        AND uc.Status = 'A'
+    OUTER APPLY
+    (
+        SELECT TOP (1)
+            pi.PersonIdentificationId,
+            pi.IdentificationTypeId,
+            pi.Identification,
+            it.Code AS IdentificationTypeCode
+        FROM dbo.PersonIdentification pi
+        INNER JOIN dbo.IdentificationType it
+            ON it.IdentificationTypeId = pi.IdentificationTypeId
+        WHERE pi.PersonId = p.PersonId
+        ORDER BY CASE WHEN pi.IsPrimary = 1 THEN 0 ELSE 1 END, pi.PersonIdentificationId
+    ) pi
     WHERE (@Status IS NULL OR u.Status = @Status)
       AND (@CompanyId IS NULL OR uc.CompanyId = @CompanyId)
       AND (
             @Search IS NULL
             OR u.Email LIKE '%' + @Search + '%'
             OR u.Username LIKE '%' + @Search + '%'
-            OR p.Identification LIKE '%' + @Search + '%'
-            OR p.FirstName LIKE '%' + @Search + '%'
-            OR p.LastName LIKE '%' + @Search + '%'
+            OR pi.Identification LIKE '%' + @Search + '%'
+            OR p.LegalName LIKE '%' + @Search + '%'
+            OR p.TradeName LIKE '%' + @Search + '%'
       )
     ORDER BY u.CreatedAt DESC;
 END;

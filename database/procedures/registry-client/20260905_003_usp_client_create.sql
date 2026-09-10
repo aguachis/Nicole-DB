@@ -1,7 +1,7 @@
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
-CREATE OR ALTER PROCEDURE dbo.usp_Client_Create
+CREATE OR ALTER PROCEDURE dbo.P_Client_Create
     @UserId uniqueidentifier, @CompanyId uniqueidentifier, @PersonId uniqueidentifier,
     @DefaultBillingIdentificationId bigint, @BillingAddress nvarchar(500), @Phone nvarchar(50), @Email nvarchar(254),
     @CreditLimit decimal(18,2)=NULL, @PaymentTermDays smallint=NULL, @CorrelationId uniqueidentifier=NULL

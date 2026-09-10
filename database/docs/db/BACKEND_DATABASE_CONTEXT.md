@@ -88,9 +88,9 @@ Los archivos bajo `database/migrations/`, `database/validation/`, `database/test
 
 La identidad fiscal es global en `PersonIdentification`; el cliente comercial sigue siendo local a una empresa en `Client`. El backend debe extraer `UserId` y `CompanyId` del contexto autenticado y pasarlos a todos los procedimientos. No acepta esos valores como autoridad de un payload del usuario.
 
-La resolución se limita a coincidencia exacta de tipo y valor. Primero llama a `dbo.usp_Registry_ResolveIdentification`; si devuelve `202`, el adaptador externo del backend consulta el proveedor, aplica sus propios timeout/reintentos y persiste solo campos estructurados mediante `dbo.usp_Registry_PersistVerification`. SQL no realiza HTTP ni conserva secretos o JSON del proveedor.
+La resolución se limita a coincidencia exacta de tipo y valor. Primero llama a `dbo.P_Registry_ResolveIdentification`; si devuelve `202`, el adaptador externo del backend consulta el proveedor, aplica sus propios timeout/reintentos y persiste solo campos estructurados mediante `dbo.P_Registry_PersistVerification`. SQL no realiza HTTP ni conserva secretos o JSON del proveedor.
 
-Para el alta, cambio y baja de clientes usa `dbo.usp_Client_Create`, `dbo.usp_Client_Update` y `dbo.usp_Client_Deactivate`. La dirección de facturación, teléfono y correo son entradas locales obligatorias. `TaxRegistration.TaxAddress` puede mostrarse como sugerencia, pero nunca se copia automáticamente a `Client.BillingAddress`.
+Para el alta, cambio y baja de clientes usa `dbo.P_Client_Create`, `dbo.P_Client_Update` y `dbo.P_Client_Deactivate`. La dirección de facturación, teléfono y correo son entradas locales obligatorias. `TaxRegistration.TaxAddress` puede mostrarse como sugerencia, pero nunca se copia automáticamente a `Client.BillingAddress`.
 
 ## Relaciones Principales
 

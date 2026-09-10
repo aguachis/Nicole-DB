@@ -26,5 +26,4 @@
 :r database/procedures/registry-client/20260905_003_usp_client_create.sql
 :r database/procedures/registry-client/20260905_004_usp_client_update.sql
 :r database/procedures/registry-client/20260905_005_usp_client_deactivate.sql
-:r database/procedures/registry-client/20260905_007_usp_client_authorization_audit_hardening.sql
 :r database/security/20260905_001_centralizar_registro_global_clientes_grants.sql

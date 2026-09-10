@@ -11,12 +11,12 @@
 Entrada permitida: `identificationTypeCode`, `identification` y `correlationId` opcional. La solicitud debe contener coincidencia exacta; no admite comodines. El backend llama primero:
 
 ```sql
-EXEC dbo.usp_Registry_ResolveIdentification
+EXEC dbo.P_Registry_ResolveIdentification
   @UserId, @CompanyId, @IdentificationTypeCode, @Identification, @CorrelationId;
 ```
 
 - `0`: devuelve datos estructurados de identidad obtenidos desde una verificación vigente.
-- `202`: el backend usa su `RegistryProviderAdapter` para HTTP, timeout, reintentos y transformación. Después llama `usp_Registry_PersistVerification`.
+- `202`: el backend usa su `RegistryProviderAdapter` para HTTP, timeout, reintentos y transformación. Después llama `P_Registry_PersistVerification`.
 - `400`, `403`, `404` y errores controlados se traducen sin revelar si otra empresa tiene relación comercial con la persona.
 
 El adaptador guarda secretos en el gestor de secretos, no en SQL. El procedimiento de persistencia recibe resultados normalizados, vigencia, hash y referencias opacas; no recibe ni guarda payload JSON. Los logs de aplicación conservan solo código de resultado y `correlationId`.
@@ -25,9 +25,9 @@ El adaptador guarda secretos en el gestor de secretos, no en SQL. El procedimien
 
 | Ruta | Procedimiento | Entrada local obligatoria |
 | --- | --- | --- |
-| `POST /api/clients` | `usp_Client_Create` | persona, identificación facturable, `billingAddress`, `phone`, `email`. |
-| `PATCH /api/clients/{clientId}` | `usp_Client_Update` | identificación facturable, `billingAddress`, `phone`, `email`; crédito/plazo opcionales. |
-| `POST /api/clients/{clientId}/deactivate` | `usp_Client_Deactivate` | ninguna adicional. |
+| `POST /api/clients` | `P_Client_Create` | persona, identificación facturable, `billingAddress`, `phone`, `email`. |
+| `PATCH /api/clients/{clientId}` | `P_Client_Update` | identificación facturable, `billingAddress`, `phone`, `email`; crédito/plazo opcionales. |
+| `POST /api/clients/{clientId}/deactivate` | `P_Client_Deactivate` | ninguna adicional. |
 
 El backend pasa el `CompanyId` de contexto y nunca permite sustituirlo con el cuerpo de la petición. Una dirección recuperada de `TaxRegistration.TaxAddress` se muestra solo como sugerencia: para grabar un cliente la UI exige confirmación y envía `billingAddress` explícito. La baja es lógica y solo afecta al cliente de la empresa activa.
 

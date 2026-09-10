@@ -1,7 +1,7 @@
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
-CREATE OR ALTER PROCEDURE dbo.usp_Registry_ResolveIdentification
+CREATE OR ALTER PROCEDURE dbo.P_Registry_ResolveIdentification
     @UserId uniqueidentifier,
     @CompanyId uniqueidentifier,
     @IdentificationTypeCode varchar(32),

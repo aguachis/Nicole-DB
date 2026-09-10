@@ -121,18 +121,33 @@ BEGIN
         u.RequiresNewPassword,
         u.MustUpdate,
         u.Status,
-        p.PersonType,
-        p.IdentificationType,
-        p.Identification,
-        p.FirstName,
-        p.MiddleName,
-        p.LastName,
-        p.BusinessName,
-        p.Phone,
-        p.Email AS PersonEmail
+        p.PersonKind AS PersonType,
+        pi.IdentificationTypeId AS IdentificationType,
+        pi.Identification,
+        p.LegalName AS FirstName,
+        CAST(NULL AS NVARCHAR(80)) AS MiddleName,
+        CAST(NULL AS NVARCHAR(80)) AS LastName,
+        p.TradeName AS BusinessName,
+        CAST(NULL AS NVARCHAR(50)) AS Phone,
+        CAST(NULL AS NVARCHAR(150)) AS PersonEmail,
+        p.LegalName,
+        p.TradeName,
+        pi.IdentificationTypeCode
     FROM dbo.AppUser u
     INNER JOIN dbo.Person p
         ON p.PersonId = u.PersonId
+    OUTER APPLY
+    (
+        SELECT TOP (1)
+            pi.IdentificationTypeId,
+            pi.Identification,
+            it.Code AS IdentificationTypeCode
+        FROM dbo.PersonIdentification pi
+        INNER JOIN dbo.IdentificationType it
+            ON it.IdentificationTypeId = pi.IdentificationTypeId
+        WHERE pi.PersonId = p.PersonId
+        ORDER BY CASE WHEN pi.IsPrimary = 1 THEN 0 ELSE 1 END, pi.PersonIdentificationId
+    ) pi
     WHERE u.UserId = @UserId
       AND u.Status = 'A'
       AND p.Status = 'A';
