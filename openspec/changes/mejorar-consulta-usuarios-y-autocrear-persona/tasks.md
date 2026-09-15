@@ -25,5 +25,5 @@
 
 ## 5. Verificacion final
 
-- [x] 5.1 Revisar consistencia con `docs/db/02-conventions.md` y convenciones de SP del repositorio.
+- [x] 5.1 Revisar consistencia con `database/docs/db/02-conventions.md` y convenciones de SP del repositorio.
 - [x] 5.2 Ejecutar `openspec validate --changes "mejorar-consulta-usuarios-y-autocrear-persona"`.

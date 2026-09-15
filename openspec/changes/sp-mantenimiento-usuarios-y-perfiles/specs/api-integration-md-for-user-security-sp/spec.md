@@ -5,7 +5,7 @@ El sistema MUST proporcionar un documento Markdown de integracion para el proyec
 
 #### Scenario: Documento publicado con estructura minima
 - **WHEN** finaliza la implementacion documental de integracion
-- **THEN** el sistema SHALL contar con un archivo en `docs/db/integrations/` que describa objetivo, SP disponibles, parametros de entrada y codigos de resultado
+- **THEN** el sistema SHALL contar con un archivo en `database/docs/db/integrations/` que describa objetivo, SP disponibles, parametros de entrada y codigos de resultado
 
 ### Requirement: Ejemplos de consumo y manejo de errores
 El sistema SHALL incluir en el documento ejemplos de invocacion desde capa de servicios API y una matriz de errores funcionales esperados.
@@ -23,4 +23,4 @@ El documento de integracion MUST referenciar convenciones existentes de base de 
 
 #### Scenario: Referencias a convenciones incluidas
 - **WHEN** se revisa el documento de integracion generado
-- **THEN** el sistema SHALL incluir referencias explicitas a `docs/db/02-conventions.md` y a los documentos de integracion relacionados
+- **THEN** el sistema SHALL incluir referencias explicitas a `database/docs/db/02-conventions.md` y a los documentos de integracion relacionados
