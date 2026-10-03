@@ -1,14 +1,13 @@
-# Creacion inicial de Nicole: registro global de clientes
+# Creación inicial de Nicole: personas globales y clientes por empresa
 
-Este recorrido es exclusivamente para una base de datos vacia. No contiene preflight, backfill, migracion ni rollback de datos.
+Esta definición crea una base de datos nueva y vacía. El punto de entrada es:
 
-1. Crea una base de datos vacia en SQL Server y selecciona esa base.
-2. Abre una ventana de SSMS con **SQLCMD Mode** habilitado.
-3. Configura como directorio de trabajo la raiz de `Nicole-DB`.
-4. Ejecuta unicamente `database/20260905_001_crear_bd_registro_global_clientes.sql`.
+```text
+database/20260905_001_crear_bd_registro_global_clientes.sql
+```
 
-El manifiesto crea las tablas base y del registro, claves, FK, indices, seeds, procedimientos y el rol `nicole_app` en el orden de dependencias. No ejecutes los archivos anteriores de `database/migrations/`, `database/validation/`, `database/tests/` o `database/rollback/`; corresponden al enfoque de migracion descartado.
+Ejecuta el manifiesto en SQLCMD Mode desde la raíz del repositorio. El orden de sus inclusiones es la única secuencia necesaria.
 
-Todos los scripts de procedimientos almacenados se mantienen centralizados en `database/procedures/`, separados por dominio (`auth`, `catalogs`, `profile` y `registry-client`).
+El esquema crea el maestro global `Person` y `PersonIdentification`, la relación comercial `Client` por `Company`, permisos, procedimientos y documentación de soporte. No define tablas ni procedimientos para conservar respuestas, trazas, proveedores, estados tributarios o actividades económicas de servicios externos.
 
-El DBA debe revisar el resultado de SQL Server y registrar sus propias evidencias. Este repositorio solo entrega la definicion y no ha ejecutado el manifiesto.
+La consulta externa de cédula o RUC pertenece al backend: ocurre solo después de que una búsqueda local exacta no encuentre una identidad y sus datos se usan únicamente como sugerencia editable del formulario.

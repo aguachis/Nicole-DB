@@ -1,4 +1,6 @@
-# Diagrama entidad-relación de Nicole
+# Diagrama detallado de base de datos
+
+Este diagrama es un reflejo del DDL base de `database/tables/`. Debe actualizarse junto con ese DDL: cada tabla y cada columna física, incluida una columna calculada, debe aparecer aquí.
 
 ```mermaid
 erDiagram
@@ -11,7 +13,6 @@ erDiagram
         datetime2 CreatedAt
         datetime2 UpdatedAt
     }
-
     IdentificationType {
         char IdentificationTypeId PK
         varchar Code UK
@@ -28,7 +29,6 @@ erDiagram
         datetime2 CreatedAt
         datetime2 UpdatedAt
     }
-
     PersonType {
         char PersonTypeId PK
         nvarchar Name UK
@@ -37,7 +37,6 @@ erDiagram
         datetime2 CreatedAt
         datetime2 UpdatedAt
     }
-
     Person {
         uniqueidentifier PersonId PK
         char PersonKind FK
@@ -49,7 +48,18 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
+    PersonIdentification {
+        bigint PersonIdentificationId PK
+        uniqueidentifier PersonId FK
+        char IdentificationTypeId FK
+        nvarchar Identification
+        nvarchar NormalizedIdentification "computed persisted"
+        bit IsPrimary
+        datetime2 CreatedAt
+        uniqueidentifier CreatedByUserId FK
+        datetime2 UpdatedAt
+        uniqueidentifier UpdatedByUserId FK
+    }
     Company {
         uniqueidentifier CompanyId PK
         nvarchar Identification UK
@@ -73,11 +83,10 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     CompanyBranch {
         uniqueidentifier CompanyBranchId PK
         uniqueidentifier CompanyId FK
-        varchar EstablishmentCode UK
+        varchar EstablishmentCode
         nvarchar BranchName
         nvarchar Address
         nvarchar Phone
@@ -90,11 +99,10 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     CompanyEmissionPoint {
         uniqueidentifier CompanyEmissionPointId PK
         uniqueidentifier CompanyBranchId FK
-        varchar EmissionPointCode UK
+        varchar EmissionPointCode
         nvarchar Name
         char Status FK
         nvarchar CreatedBy
@@ -102,11 +110,10 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     AppUser {
         uniqueidentifier UserId PK
         uniqueidentifier PersonId FK
-        nvarchar Username UK
+        nvarchar Username
         nvarchar PasswordHash
         nvarchar Email UK
         bit IsBlocked
@@ -118,11 +125,10 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     Profile {
         uniqueidentifier ProfileId PK
         uniqueidentifier CompanyId FK
-        nvarchar Name UK
+        nvarchar Name
         nvarchar Description
         char Status FK
         nvarchar CreatedBy
@@ -130,7 +136,6 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     Permission {
         uniqueidentifier PermissionId PK
         nvarchar Code UK
@@ -143,7 +148,6 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     ProfilePermission {
         uniqueidentifier ProfilePermissionId PK
         uniqueidentifier ProfileId FK
@@ -154,7 +158,6 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     UserCompany {
         uniqueidentifier UserCompanyId PK
         uniqueidentifier UserId FK
@@ -165,7 +168,6 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
     UserCompanyProfile {
         uniqueidentifier UserCompanyProfileId PK
         uniqueidentifier UserCompanyId FK
@@ -177,91 +179,6 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-
-    RegistryProvider {
-        smallint RegistryProviderId PK
-        varchar Code UK
-        nvarchar Name
-        nvarchar BaseUrl
-        int DefaultCacheMinutes
-        bit IsActive
-        datetime2 CreatedAt
-        uniqueidentifier CreatedByUserId FK
-        datetime2 UpdatedAt
-        uniqueidentifier UpdatedByUserId FK
-    }
-
-    PersonIdentification {
-        bigint PersonIdentificationId PK
-        uniqueidentifier PersonId FK
-        char IdentificationTypeId FK
-        nvarchar Identification
-        nvarchar NormalizedIdentification UK
-        bit IsPrimary
-        varchar VerificationStatus
-        datetime2 LastVerifiedAt
-        datetime2 ExpiresAt
-        datetime2 CreatedAt
-        uniqueidentifier CreatedByUserId FK
-        datetime2 UpdatedAt
-        uniqueidentifier UpdatedByUserId FK
-    }
-
-    TaxRegistration {
-        bigint TaxRegistrationId PK
-        bigint PersonIdentificationId FK
-        nvarchar TaxStatus
-        nvarchar TaxpayerClass
-        nvarchar TaxAddress
-        bit AccountingRequired
-        date StartedAt
-        smallint RegistryProviderId FK
-        varchar Source
-        datetime2 VerifiedAt
-        datetime2 VerificationExpiresAt
-    }
-
-    EconomicActivity {
-        bigint EconomicActivityId PK
-        nvarchar ActivityCode UK
-        nvarchar Name
-        bit IsActive
-    }
-
-    TaxRegistrationEconomicActivity {
-        bigint TaxRegistrationEconomicActivityId PK
-        bigint TaxRegistrationId FK
-        bigint EconomicActivityId FK
-        nvarchar ProviderActivityId
-        bit IsPrimary
-        datetime2 VerifiedAt
-    }
-
-    PersonVerification {
-        bigint PersonVerificationId PK
-        bigint PersonIdentificationId FK
-        smallint RegistryProviderId FK
-        varchar Result
-        datetime2 QueriedAt
-        datetime2 ExpiresAt
-        varbinary PayloadHash
-        nvarchar ProviderRequestId
-        varchar FailureCode
-        uniqueidentifier CorrelationId
-    }
-
-    RegistryAccessAudit {
-        bigint RegistryAccessAuditId PK
-        uniqueidentifier CompanyId FK
-        uniqueidentifier UserId FK
-        bigint PersonIdentificationId FK
-        smallint RegistryProviderId FK
-        varchar Outcome
-        datetime2 OccurredAt
-        uniqueidentifier CorrelationId
-        varchar ReasonCode
-    }
-
     Client {
         uniqueidentifier ClientId PK
         uniqueidentifier CompanyId FK
@@ -281,52 +198,52 @@ erDiagram
         datetime2 UpdatedAt
     }
 
-    EntityStatus ||--o{ IdentificationType : "Status"
-    EntityStatus ||--o{ PersonType : "Status"
-    EntityStatus ||--o{ Person : "Status"
-    EntityStatus ||--o{ Company : "Status"
-    EntityStatus ||--o{ CompanyBranch : "Status"
-    EntityStatus ||--o{ CompanyEmissionPoint : "Status"
-    EntityStatus ||--o{ AppUser : "Status"
-    EntityStatus ||--o{ Profile : "Status"
-    EntityStatus ||--o{ Permission : "Status"
-    EntityStatus ||--o{ ProfilePermission : "Status"
-    EntityStatus ||--o{ UserCompany : "Status"
-    EntityStatus ||--o{ UserCompanyProfile : "Status"
-    EntityStatus ||--o{ Client : "Status"
-
-    PersonType ||--o{ Person : "PersonKind"
-    Person ||--o{ AppUser : "PersonId"
-    Person ||--o{ Company : "RepresentativeId"
-    Company o|--o{ Company : "ParentCompanyId"
-    Company ||--o{ CompanyBranch : "CompanyId"
-    CompanyBranch ||--o{ CompanyEmissionPoint : "CompanyBranchId"
-    Company ||--o{ Profile : "CompanyId"
-
-    AppUser ||--o{ UserCompany : "UserId"
-    Company ||--o{ UserCompany : "CompanyId"
-    UserCompany ||--o{ UserCompanyProfile : "UserCompanyId and CompanyId"
-    Profile ||--o{ UserCompanyProfile : "ProfileId and CompanyId"
-    Profile ||--o{ ProfilePermission : "ProfileId"
-    Permission ||--o{ ProfilePermission : "PermissionId"
-
-    Person ||--o{ PersonIdentification : "PersonId"
-    IdentificationType ||--o{ PersonIdentification : "IdentificationTypeId"
-    AppUser o|--o{ RegistryProvider : "CreatedByUserId or UpdatedByUserId"
-    AppUser o|--o{ PersonIdentification : "CreatedByUserId or UpdatedByUserId"
-    PersonIdentification ||--o| TaxRegistration : "PersonIdentificationId"
-    RegistryProvider ||--o{ TaxRegistration : "RegistryProviderId"
-    TaxRegistration ||--o{ TaxRegistrationEconomicActivity : "TaxRegistrationId"
-    EconomicActivity ||--o{ TaxRegistrationEconomicActivity : "EconomicActivityId"
-    PersonIdentification ||--o{ PersonVerification : "PersonIdentificationId"
-    RegistryProvider ||--o{ PersonVerification : "RegistryProviderId"
-
-    Company ||--o{ RegistryAccessAudit : "CompanyId"
-    AppUser o|--o{ RegistryAccessAudit : "UserId"
-    PersonIdentification o|--o{ RegistryAccessAudit : "PersonIdentificationId"
-    RegistryProvider o|--o{ RegistryAccessAudit : "RegistryProviderId"
-
-    Company ||--o{ Client : "CompanyId"
-    Person ||--o{ Client : "PersonId"
-    PersonIdentification ||--o{ Client : "DefaultBillingIdentificationId and PersonId"
+    EntityStatus ||--o{ IdentificationType : Status
+    EntityStatus ||--o{ PersonType : Status
+    EntityStatus ||--o{ Person : Status
+    EntityStatus ||--o{ Company : Status
+    EntityStatus ||--o{ CompanyBranch : Status
+    EntityStatus ||--o{ CompanyEmissionPoint : Status
+    EntityStatus ||--o{ AppUser : Status
+    EntityStatus ||--o{ Profile : Status
+    EntityStatus ||--o{ Permission : Status
+    EntityStatus ||--o{ ProfilePermission : Status
+    EntityStatus ||--o{ UserCompany : Status
+    EntityStatus ||--o{ UserCompanyProfile : Status
+    EntityStatus ||--o{ Client : Status
+    PersonType ||--o{ Person : PersonKind
+    Person ||--o{ PersonIdentification : PersonId
+    IdentificationType ||--o{ PersonIdentification : IdentificationTypeId
+    AppUser o|--o{ PersonIdentification : CreatedByUserId
+    AppUser o|--o{ PersonIdentification : UpdatedByUserId
+    Person ||--o{ AppUser : PersonId
+    Person ||--o{ Company : RepresentativeId
+    Company o|--o{ Company : ParentCompanyId
+    Company ||--o{ CompanyBranch : CompanyId
+    CompanyBranch ||--o{ CompanyEmissionPoint : CompanyBranchId
+    Company ||--o{ Profile : CompanyId
+    AppUser ||--o{ UserCompany : UserId
+    Company ||--o{ UserCompany : CompanyId
+    UserCompany ||--o{ UserCompanyProfile : UserCompanyId_and_CompanyId
+    Profile ||--o{ UserCompanyProfile : ProfileId_and_CompanyId
+    Profile ||--o{ ProfilePermission : ProfileId
+    Permission ||--o{ ProfilePermission : PermissionId
+    Company ||--o{ Client : CompanyId
+    Person ||--o{ Client : PersonId
+    PersonIdentification ||--o{ Client : DefaultBillingIdentificationId_and_PersonId
 ```
+
+## Restricciones compuestas y filtradas
+
+Las siguientes claves no pueden expresarse como una marca en una sola columna del diagrama y se conservan aquí para completar la lectura del modelo:
+
+| Tabla | Restricción |
+|---|---|
+| `CompanyBranch` | `UQ_CompanyBranch_Company_EstablishmentCode (CompanyId, EstablishmentCode)` |
+| `CompanyEmissionPoint` | `UQ_CompanyEmissionPoint_Branch_EmissionPointCode (CompanyBranchId, EmissionPointCode)` |
+| `Profile` | `UQ_Profile_Company_Name (CompanyId, Name)` y `UQ_Profile_ProfileId_CompanyId (ProfileId, CompanyId)` |
+| `ProfilePermission` | `UQ_ProfilePermission_Profile_Permission (ProfileId, PermissionId)` |
+| `UserCompany` | `UQ_UserCompany_User_Company (UserId, CompanyId)` y `UQ_UserCompany_UserCompanyId_CompanyId (UserCompanyId, CompanyId)` |
+| `UserCompanyProfile` | `UQ_UserCompanyProfile_UserCompany_Profile (UserCompanyId, ProfileId)`; FK a `UserCompany (UserCompanyId, CompanyId)` y a `Profile (ProfileId, CompanyId)` |
+| `PersonIdentification` | `UQ_PersonIdentification_Type_Normalized (IdentificationTypeId, NormalizedIdentification)`, `UQ_PersonIdentification_Id_Person (PersonIdentificationId, PersonId)` y el índice filtrado `UX_PersonIdentification_OnePrimaryPerPerson (PersonId) WHERE IsPrimary = 1` |
+| `Client` | `UQ_Client_Company_Person (CompanyId, PersonId)`, `UQ_Client_Client_Company (ClientId, CompanyId)` y FK de facturación `(DefaultBillingIdentificationId, PersonId)` a `PersonIdentification (PersonIdentificationId, PersonId)` |

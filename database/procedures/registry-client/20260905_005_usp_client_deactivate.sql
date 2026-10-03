@@ -9,7 +9,6 @@ BEGIN
     DECLARE @Now datetime2(3)=SYSUTCDATETIME(); SET @CorrelationId=COALESCE(@CorrelationId,NEWID());
     IF dbo.fn_HasEffectivePermission(@UserId,@CompanyId,N'client.deactivate')=0
     BEGIN
-      IF EXISTS(SELECT 1 FROM dbo.Company WHERE CompanyId=@CompanyId) INSERT dbo.RegistryAccessAudit(CompanyId,UserId,Outcome,OccurredAt,CorrelationId,ReasonCode) VALUES(@CompanyId,CASE WHEN EXISTS(SELECT 1 FROM dbo.AppUser WHERE UserId=@UserId) THEN @UserId END,'Denied',@Now,@CorrelationId,'ClientDeactivatePermissionDenied');
       SELECT CAST(403 AS int) result_code,N'Permission or tenant membership denied.' result_message,@CorrelationId correlation_id; RETURN;
     END;
     BEGIN TRY
@@ -18,7 +17,6 @@ BEGIN
       IF @@ROWCOUNT=0
       BEGIN
         ROLLBACK TRANSACTION;
-        INSERT dbo.RegistryAccessAudit(CompanyId,UserId,Outcome,OccurredAt,CorrelationId,ReasonCode) VALUES(@CompanyId,@UserId,'Denied',@Now,@CorrelationId,'ClientOutsideTenantOrInactive');
         SELECT CAST(404 AS int) result_code,N'Active Client not found in the authorized company.' result_message,@CorrelationId correlation_id; RETURN;
       END;
       COMMIT TRANSACTION;

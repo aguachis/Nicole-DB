@@ -15,14 +15,12 @@
 :r database/tables/11-create-table-user-company.sql
 :r database/tables/12-create-table-user-company-profile.sql
 :r database/tables/13-create-table-global-client-registry.sql
-:r database/seeds/20260905_002_centralizar_registro_global_clientes_registry_provider.sql
 :r database/tables/20-create-table-client.sql
 :r database/seeds/20260905_003_centralizar_registro_global_clientes_permissions.sql
 :r database/procedures/catalogs/P_Catalog_Lookup.sql
 :r database/procedures/auth/P_Auth_Register.sql
 :r database/procedures/registry-client/20260905_006_registry_client_authorization_helpers.sql
-:r database/procedures/registry-client/20260905_001_usp_registry_resolve_identification.sql
-:r database/procedures/registry-client/20260905_002_usp_registry_persist_verification.sql
+:r database/procedures/registry-client/20260905_001_usp_person_resolve_identification.sql
 :r database/procedures/registry-client/20260905_003_usp_client_create.sql
 :r database/procedures/registry-client/20260905_004_usp_client_update.sql
 :r database/procedures/registry-client/20260905_005_usp_client_deactivate.sql

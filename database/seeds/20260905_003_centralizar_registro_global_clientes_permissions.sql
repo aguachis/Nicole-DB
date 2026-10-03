@@ -3,14 +3,13 @@ SET NOCOUNT ON;
 SET XACT_ABORT ON;
 GO
 
-DECLARE @CreatedBy nvarchar(80)=N'registry.seed';
+DECLARE @CreatedBy nvarchar(80)=N'client.seed';
 DECLARE @Permissions table (Code nvarchar(150) NOT NULL PRIMARY KEY, Name nvarchar(150) NOT NULL, Description nvarchar(250) NOT NULL);
 INSERT @Permissions VALUES
- (N'client.read',N'Consultar clientes',N'Consulta clientes y resolución exacta dentro de la empresa autorizada'),
+ (N'client.read',N'Consultar clientes',N'Consulta clientes de la empresa autorizada'),
  (N'client.create',N'Crear clientes',N'Crea relaciones cliente por empresa'),
  (N'client.update',N'Actualizar clientes',N'Actualiza datos comerciales locales'),
- (N'client.deactivate',N'Desactivar clientes',N'Desactiva clientes sin borrarlos'),
- (N'client.verify',N'Verificar identidad fiscal',N'Permite persistir o reutilizar verificaciones de registro');
+ (N'client.deactivate',N'Desactivar clientes',N'Desactiva clientes sin borrarlos');
 
 INSERT dbo.Permission(PermissionId,Code,Name,Description,ModuleCode,Status,CreatedBy,CreatedAt)
 SELECT NEWID(),p.Code,p.Name,p.Description,N'client','A',@CreatedBy,SYSDATETIME()

@@ -10,17 +10,15 @@ BEGIN
     DECLARE @Now datetime2(3)=SYSUTCDATETIME(); SET @CorrelationId=COALESCE(@CorrelationId,NEWID());
     IF dbo.fn_HasEffectivePermission(@UserId,@CompanyId,N'client.update')=0
     BEGIN
-      IF EXISTS(SELECT 1 FROM dbo.Company WHERE CompanyId=@CompanyId) INSERT dbo.RegistryAccessAudit(CompanyId,UserId,Outcome,OccurredAt,CorrelationId,ReasonCode) VALUES(@CompanyId,CASE WHEN EXISTS(SELECT 1 FROM dbo.AppUser WHERE UserId=@UserId) THEN @UserId END,'Denied',@Now,@CorrelationId,'ClientUpdatePermissionDenied');
       SELECT CAST(403 AS int) result_code,N'Permission or tenant membership denied.' result_message,@CorrelationId correlation_id; RETURN;
     END;
     IF NOT EXISTS(SELECT 1 FROM dbo.Client WHERE ClientId=@ClientId AND CompanyId=@CompanyId)
     BEGIN
-      INSERT dbo.RegistryAccessAudit(CompanyId,UserId,Outcome,OccurredAt,CorrelationId,ReasonCode) VALUES(@CompanyId,@UserId,'Denied',@Now,@CorrelationId,'ClientOutsideTenant');
       SELECT CAST(404 AS int) result_code,N'Client not found in the authorized company.' result_message,@CorrelationId correlation_id; RETURN;
     END;
     IF NULLIF(LTRIM(RTRIM(@BillingAddress)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(@Phone)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(@Email)),N'') IS NULL OR @Email NOT LIKE N'%_@_%._%'
     BEGIN SELECT CAST(400 AS int) result_code,N'BillingAddress, Phone, and a syntactically valid Email are required local inputs.' result_message,@CorrelationId correlation_id; RETURN; END;
-    IF NOT EXISTS(SELECT 1 FROM dbo.Client c JOIN dbo.PersonIdentification pi ON pi.PersonIdentificationId=@DefaultBillingIdentificationId AND pi.PersonId=c.PersonId JOIN dbo.IdentificationType it ON it.IdentificationTypeId=pi.IdentificationTypeId WHERE c.ClientId=@ClientId AND c.CompanyId=@CompanyId AND it.IsActive=1 AND it.IsBillingAllowed=1 AND pi.VerificationStatus<>'Invalid')
+    IF NOT EXISTS(SELECT 1 FROM dbo.Client c JOIN dbo.PersonIdentification pi ON pi.PersonIdentificationId=@DefaultBillingIdentificationId AND pi.PersonId=c.PersonId JOIN dbo.IdentificationType it ON it.IdentificationTypeId=pi.IdentificationTypeId WHERE c.ClientId=@ClientId AND c.CompanyId=@CompanyId AND it.IsActive=1 AND it.IsBillingAllowed=1)
     BEGIN SELECT CAST(422 AS int) result_code,N'Default billing identification must belong to the Client Person and be billable.' result_message,@CorrelationId correlation_id; RETURN; END;
     BEGIN TRY
       BEGIN TRANSACTION;

@@ -339,8 +339,7 @@ BEGIN
             (N'client.read', N'Consultar clientes', N'Consulta clientes y registro exacto', N'client'),
             (N'client.create', N'Crear clientes', N'Crea relaciones cliente por empresa', N'client'),
             (N'client.update', N'Actualizar clientes', N'Actualiza datos comerciales locales', N'client'),
-            (N'client.deactivate', N'Desactivar clientes', N'Desactiva clientes sin borrarlos', N'client'),
-            (N'client.verify', N'Verificar identidad fiscal', N'Permite verificar identidad fiscal', N'client');
+            (N'client.deactivate', N'Desactivar clientes', N'Desactiva clientes sin borrarlos', N'client');
 
         INSERT INTO dbo.Permission
         (
