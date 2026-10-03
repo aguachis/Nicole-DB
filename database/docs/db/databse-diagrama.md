@@ -113,6 +113,7 @@ erDiagram
     AppUser {
         uniqueidentifier UserId PK
         uniqueidentifier PersonId FK
+        uniqueidentifier CompanyId FK
         nvarchar Username
         nvarchar PasswordHash
         nvarchar Email UK
@@ -124,6 +125,26 @@ erDiagram
         datetime2 CreatedAt
         nvarchar UpdatedBy
         datetime2 UpdatedAt
+    }
+    UserProfile {
+        uniqueidentifier UserProfileId PK
+        uniqueidentifier UserId FK
+        uniqueidentifier CompanyId FK
+        uniqueidentifier ProfileId FK
+        char Status FK
+        nvarchar CreatedBy
+        datetime2 CreatedAt
+        nvarchar UpdatedBy
+        datetime2 UpdatedAt
+    }
+    UserProfileAudit {
+        bigint UserProfileAuditId PK
+        uniqueidentifier UserId FK
+        uniqueidentifier CompanyId FK
+        uniqueidentifier ProfileId FK
+        varchar OperationCode
+        nvarchar Actor
+        datetime2 OccurredAt
     }
     Profile {
         uniqueidentifier ProfileId PK
@@ -158,27 +179,6 @@ erDiagram
         nvarchar UpdatedBy
         datetime2 UpdatedAt
     }
-    UserCompany {
-        uniqueidentifier UserCompanyId PK
-        uniqueidentifier UserId FK
-        uniqueidentifier CompanyId FK
-        char Status FK
-        nvarchar CreatedBy
-        datetime2 CreatedAt
-        nvarchar UpdatedBy
-        datetime2 UpdatedAt
-    }
-    UserCompanyProfile {
-        uniqueidentifier UserCompanyProfileId PK
-        uniqueidentifier UserCompanyId FK
-        uniqueidentifier CompanyId FK
-        uniqueidentifier ProfileId FK
-        char Status FK
-        nvarchar CreatedBy
-        datetime2 CreatedAt
-        nvarchar UpdatedBy
-        datetime2 UpdatedAt
-    }
     Client {
         uniqueidentifier ClientId PK
         uniqueidentifier CompanyId FK
@@ -205,11 +205,10 @@ erDiagram
     EntityStatus ||--o{ CompanyBranch : Status
     EntityStatus ||--o{ CompanyEmissionPoint : Status
     EntityStatus ||--o{ AppUser : Status
+    EntityStatus ||--o{ UserProfile : Status
     EntityStatus ||--o{ Profile : Status
     EntityStatus ||--o{ Permission : Status
     EntityStatus ||--o{ ProfilePermission : Status
-    EntityStatus ||--o{ UserCompany : Status
-    EntityStatus ||--o{ UserCompanyProfile : Status
     EntityStatus ||--o{ Client : Status
     PersonType ||--o{ Person : PersonKind
     Person ||--o{ PersonIdentification : PersonId
@@ -222,10 +221,10 @@ erDiagram
     Company ||--o{ CompanyBranch : CompanyId
     CompanyBranch ||--o{ CompanyEmissionPoint : CompanyBranchId
     Company ||--o{ Profile : CompanyId
-    AppUser ||--o{ UserCompany : UserId
-    Company ||--o{ UserCompany : CompanyId
-    UserCompany ||--o{ UserCompanyProfile : UserCompanyId_and_CompanyId
-    Profile ||--o{ UserCompanyProfile : ProfileId_and_CompanyId
+    Company ||--o{ AppUser : CompanyId
+    AppUser ||--o{ UserProfile : UserId_and_CompanyId
+    Profile ||--o{ UserProfile : ProfileId_and_CompanyId
+    UserProfile ||--o{ UserProfileAudit : UserId_and_ProfileId
     Profile ||--o{ ProfilePermission : ProfileId
     Permission ||--o{ ProfilePermission : PermissionId
     Company ||--o{ Client : CompanyId
@@ -243,7 +242,8 @@ Las siguientes claves no pueden expresarse como una marca en una sola columna de
 | `CompanyEmissionPoint` | `UQ_CompanyEmissionPoint_Branch_EmissionPointCode (CompanyBranchId, EmissionPointCode)` |
 | `Profile` | `UQ_Profile_Company_Name (CompanyId, Name)` y `UQ_Profile_ProfileId_CompanyId (ProfileId, CompanyId)` |
 | `ProfilePermission` | `UQ_ProfilePermission_Profile_Permission (ProfileId, PermissionId)` |
-| `UserCompany` | `UQ_UserCompany_User_Company (UserId, CompanyId)` y `UQ_UserCompany_UserCompanyId_CompanyId (UserCompanyId, CompanyId)` |
-| `UserCompanyProfile` | `UQ_UserCompanyProfile_UserCompany_Profile (UserCompanyId, ProfileId)`; FK a `UserCompany (UserCompanyId, CompanyId)` y a `Profile (ProfileId, CompanyId)` |
+| `AppUser` | Clave `UQ_AppUser_UserId_CompanyId` para la FK compuesta de asignaciones; no almacena `ProfileId`. |
+| `UserProfile` | `UQ_UserProfile_User_Profile (UserId, ProfileId)` evita duplicados; FKs compuestas a `AppUser (UserId, CompanyId)` y `Profile (ProfileId, CompanyId)`. |
+| `UserProfileAudit` | FKs sin cascada a `UserProfile`, `AppUser` y `Profile`; eventos append-only identificados por `OperationCode`, `Actor` y `OccurredAt`. |
 | `PersonIdentification` | `UQ_PersonIdentification_Type_Normalized (IdentificationTypeId, NormalizedIdentification)`, `UQ_PersonIdentification_Id_Person (PersonIdentificationId, PersonId)` y el índice filtrado `UX_PersonIdentification_OnePrimaryPerPerson (PersonId) WHERE IsPrimary = 1` |
 | `Client` | `UQ_Client_Company_Person (CompanyId, PersonId)`, `UQ_Client_Client_Company (ClientId, CompanyId)` y FK de facturación `(DefaultBillingIdentificationId, PersonId)` a `PersonIdentification (PersonIdentificationId, PersonId)` |

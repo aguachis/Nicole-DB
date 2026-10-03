@@ -23,7 +23,15 @@ BEGIN
     SET NOCOUNT ON;
 
     IF @CompanyId IS NULL
-        RAISERROR('CompanyId is required.', 16, 1);
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'CompanyId is required.' AS result_message;
+        RETURN;
+    END;
+
+    SELECT
+        CAST(0 AS INT) AS result_code,
+        N'Query executed successfully.' AS result_message;
 
     SELECT
         p.ProfileId,

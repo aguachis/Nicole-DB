@@ -41,7 +41,9 @@ BEGIN
     BEGIN
         SELECT
             CAST(0 AS INT) AS result_code,
-            N'Query executed successfully.' AS result_message,
+            N'Query executed successfully.' AS result_message;
+
+        SELECT
             N'STATUS' AS CatalogKey,
             es.StatusCode AS [Value],
             es.StatusName AS [Label],
@@ -58,7 +60,9 @@ BEGIN
     BEGIN
         SELECT
             CAST(0 AS INT) AS result_code,
-            N'Query executed successfully.' AS result_message,
+            N'Query executed successfully.' AS result_message;
+
+        SELECT
             N'IDENTIFICATION' AS CatalogKey,
             it.IdentificationTypeId AS [Value],
             it.Name AS [Label],
@@ -75,7 +79,9 @@ BEGIN
     BEGIN
         SELECT
             CAST(0 AS INT) AS result_code,
-            N'Query executed successfully.' AS result_message,
+            N'Query executed successfully.' AS result_message;
+
+        SELECT
             N'PERSON_TYPE' AS CatalogKey,
             pt.PersonTypeId AS [Value],
             pt.Name AS [Label],
@@ -89,7 +95,7 @@ BEGIN
     END;
 
     SELECT
-        CAST(1001 AS INT) AS result_code,
+        CAST(1002 AS INT) AS result_code,
         N'CatalogKey is not supported.' AS result_message;
 END;
 GO

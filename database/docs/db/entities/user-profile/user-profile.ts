@@ -1,7 +1,8 @@
-export interface UserCompany {
-  userCompanyId: string;
+export interface UserProfile {
+  userProfileId: string;
   userId: string;
   companyId: string;
+  profileId: string;
   status: string;
   createdBy: string;
   createdAt: string;

@@ -4,6 +4,7 @@ public sealed class AppUser
 {
     public Guid UserId { get; set; }
     public Guid PersonId { get; set; }
+    public Guid CompanyId { get; set; }
     public string? Username { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

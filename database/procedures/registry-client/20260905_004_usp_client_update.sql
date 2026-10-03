@@ -2,24 +2,36 @@ SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 CREATE OR ALTER PROCEDURE dbo.P_Client_Update
-    @UserId uniqueidentifier,@CompanyId uniqueidentifier,@ClientId uniqueidentifier,@DefaultBillingIdentificationId bigint,
+    @UserId uniqueidentifier,@CompanyId uniqueidentifier,@ProfileId uniqueidentifier,@ClientId uniqueidentifier,@DefaultBillingIdentificationId bigint,
     @BillingAddress nvarchar(500),@Phone nvarchar(50),@Email nvarchar(254),@CreditLimit decimal(18,2)=NULL,@PaymentTermDays smallint=NULL,@CorrelationId uniqueidentifier=NULL
 AS
 BEGIN
     SET NOCOUNT ON; SET XACT_ABORT ON;
     DECLARE @Now datetime2(3)=SYSUTCDATETIME(); SET @CorrelationId=COALESCE(@CorrelationId,NEWID());
-    IF dbo.fn_HasEffectivePermission(@UserId,@CompanyId,N'client.update')=0
+    IF dbo.fn_HasEffectivePermission(@UserId,@CompanyId,@ProfileId,N'client.update')=0
     BEGIN
-      SELECT CAST(403 AS int) result_code,N'Permission or tenant membership denied.' result_message,@CorrelationId correlation_id; RETURN;
+      SELECT CAST(3001 AS int) result_code,N'Permission or tenant membership denied.' result_message,@CorrelationId correlation_id,CAST(NULL AS nvarchar(20)) operation; RETURN;
     END;
     IF NOT EXISTS(SELECT 1 FROM dbo.Client WHERE ClientId=@ClientId AND CompanyId=@CompanyId)
     BEGIN
-      SELECT CAST(404 AS int) result_code,N'Client not found in the authorized company.' result_message,@CorrelationId correlation_id; RETURN;
+      SELECT CAST(2001 AS int) result_code,N'Client not found in the authorized company.' result_message,@CorrelationId correlation_id,CAST(NULL AS nvarchar(20)) operation; RETURN;
     END;
     IF NULLIF(LTRIM(RTRIM(@BillingAddress)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(@Phone)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(@Email)),N'') IS NULL OR @Email NOT LIKE N'%_@_%._%'
-    BEGIN SELECT CAST(400 AS int) result_code,N'BillingAddress, Phone, and a syntactically valid Email are required local inputs.' result_message,@CorrelationId correlation_id; RETURN; END;
+    BEGIN SELECT CAST(1001 AS int) result_code,N'BillingAddress, Phone, and a syntactically valid Email are required local inputs.' result_message,@CorrelationId correlation_id,CAST(NULL AS nvarchar(20)) operation; RETURN; END;
     IF NOT EXISTS(SELECT 1 FROM dbo.Client c JOIN dbo.PersonIdentification pi ON pi.PersonIdentificationId=@DefaultBillingIdentificationId AND pi.PersonId=c.PersonId JOIN dbo.IdentificationType it ON it.IdentificationTypeId=pi.IdentificationTypeId WHERE c.ClientId=@ClientId AND c.CompanyId=@CompanyId AND it.IsActive=1 AND it.IsBillingAllowed=1)
-    BEGIN SELECT CAST(422 AS int) result_code,N'Default billing identification must belong to the Client Person and be billable.' result_message,@CorrelationId correlation_id; RETURN; END;
+    BEGIN SELECT CAST(4003 AS int) result_code,N'Default billing identification must belong to the Client Person and be billable.' result_message,@CorrelationId correlation_id,CAST(NULL AS nvarchar(20)) operation; RETURN; END;
+    IF NOT EXISTS
+    (
+      SELECT c.DefaultBillingIdentificationId,c.BillingAddress,c.Phone,c.Email,c.CreditLimit,c.PaymentTermDays
+      FROM dbo.Client c WHERE c.ClientId=@ClientId AND c.CompanyId=@CompanyId
+      EXCEPT
+      SELECT @DefaultBillingIdentificationId,@BillingAddress,@Phone,@Email,@CreditLimit,@PaymentTermDays
+    )
+    BEGIN
+      SELECT CAST(0 AS int) result_code,N'No changes applied. Client already has the requested values.' result_message,@CorrelationId correlation_id,N'NOOP' operation;
+      SELECT @ClientId client_id;
+      RETURN;
+    END;
     BEGIN TRY
       BEGIN TRANSACTION;
       UPDATE dbo.Client SET DefaultBillingIdentificationId=@DefaultBillingIdentificationId,BillingAddress=@BillingAddress,Phone=@Phone,Email=@Email,CreditLimit=@CreditLimit,PaymentTermDays=@PaymentTermDays,UpdatedBy=CONVERT(nvarchar(80),@UserId),UpdatedAt=@Now WHERE ClientId=@ClientId AND CompanyId=@CompanyId;
@@ -29,6 +41,7 @@ BEGIN
       IF @@TRANCOUNT>0 ROLLBACK TRANSACTION;
       THROW;
     END CATCH;
-    SELECT CAST(0 AS int) result_code,N'Client updated.' result_message,@CorrelationId correlation_id,@ClientId client_id;
+    SELECT CAST(0 AS int) result_code,N'Client updated.' result_message,@CorrelationId correlation_id,N'UPDATE' operation;
+    SELECT @ClientId client_id;
 END;
 GO

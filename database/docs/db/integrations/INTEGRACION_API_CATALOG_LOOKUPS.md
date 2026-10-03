@@ -187,8 +187,13 @@ EXEC dbo.P_Catalog_Lookup
 | result_code | HTTP | error.code sugerido | Caso |
 | --- | --- | --- | --- |
 | `0` | `200` | N/A | Consulta exitosa. |
-| `1001` | `400` | `VALIDATION_REQUIRED_FIELD` | Falta `CatalogKey` o la clave no es soportada. |
-| `-5000` | `500` | `INTERNAL_SERVER_ERROR` | Error inesperado de base de datos. |
+| `1001` | `400` | `VALIDATION_REQUIRED_FIELD` | Falta `CatalogKey`. |
+| `1002` | `400` | `CATALOG_KEY_UNSUPPORTED` | La clave funcional no esta soportada. |
+| Excepcion SQL | `500` | `INTERNAL_SERVER_ERROR` | Error tecnico inesperado propagado por el SP. |
+
+`dbo.P_Catalog_Lookup` devuelve primero el resultset de estado y luego el conjunto de items. El estado exitoso no se repite en cada item.
+
+RS1 contiene `result_code` y `result_message`. Si la consulta es exitosa, RS2 contiene `CatalogKey`, `Value`, `Label`, `Description` y `Status`; si no hay items, RS2 conserva esas columnas y devuelve cero filas. No se incluye `operation` porque es una consulta.
 
 ## Notas de integracion
 

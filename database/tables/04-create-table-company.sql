@@ -6,7 +6,7 @@ Objetivo:
     Crear la tabla Company segun la estructura actualmente existente en BD.
 
 Concepto:
-    Company representa la empresa legal dentro del modelo multiempresa.
+    Company representa una empresa tenant. Cada AppUser pertenece a una sola empresa.
     Los datos operativos por sucursal y punto de emision se documentan en
     CompanyBranch y CompanyEmissionPoint.
 

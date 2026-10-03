@@ -30,50 +30,107 @@ BEGIN
     SET @Description = NULLIF(LTRIM(RTRIM(@Description)), '');
     SET @UpdatedBy = LEFT(LTRIM(RTRIM(@UpdatedBy)), 80);
 
+    IF @CompanyId IS NULL OR @ProfileId IS NULL OR @Name IS NULL OR @Name = ''
+       OR @UpdatedBy IS NULL OR @UpdatedBy = ''
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'CompanyId, ProfileId, Name and UpdatedBy are required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.Company c
+        WHERE c.CompanyId = @CompanyId
+          AND c.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(2002 AS INT) AS result_code,
+               N'Company not found or inactive.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.Profile p
+        WHERE p.ProfileId = @ProfileId
+          AND p.CompanyId = @CompanyId
+          AND p.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'Profile not found or inactive for the company.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.Profile p
+        WHERE p.CompanyId = @CompanyId
+          AND p.Name = @Name
+          AND p.ProfileId <> @ProfileId
+    )
+    BEGIN
+        SELECT CAST(4001 AS INT) AS result_code,
+               N'Profile name already exists for the company.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.Profile p
+        WHERE p.ProfileId = @ProfileId
+          AND p.CompanyId = @CompanyId
+          AND p.Status = 'A'
+          AND p.Name = @Name
+          AND ISNULL(p.Description, N'') = ISNULL(@Description, N'')
+    )
+    BEGIN
+        SELECT CAST(0 AS INT) AS result_code,
+               N'No changes applied. Profile already has the requested values.' AS result_message,
+               N'NOOP' AS operation;
+
+        SELECT
+            p.ProfileId,
+            p.CompanyId,
+            p.Name,
+            p.Description,
+            p.Status,
+            p.CreatedBy,
+            p.CreatedAt,
+            p.UpdatedBy,
+            p.UpdatedAt,
+            COUNT(pp.ProfilePermissionId) AS ActivePermissionCount
+        FROM dbo.Profile p
+        LEFT JOIN dbo.ProfilePermission pp
+            ON pp.ProfileId = p.ProfileId
+           AND pp.Status = 'A'
+        WHERE p.ProfileId = @ProfileId
+          AND p.CompanyId = @CompanyId
+          AND p.Status = 'A'
+        GROUP BY
+            p.ProfileId,
+            p.CompanyId,
+            p.Name,
+            p.Description,
+            p.Status,
+            p.CreatedBy,
+            p.CreatedAt,
+            p.UpdatedBy,
+            p.UpdatedAt;
+        RETURN;
+    END;
+
     BEGIN TRY
         BEGIN TRAN;
-
-        IF @CompanyId IS NULL
-            RAISERROR('CompanyId is required.', 16, 1);
-
-        IF @ProfileId IS NULL
-            RAISERROR('ProfileId is required.', 16, 1);
-
-        IF @Name IS NULL OR @Name = ''
-            RAISERROR('Name is required.', 16, 1);
-
-        IF @UpdatedBy IS NULL OR @UpdatedBy = ''
-            RAISERROR('UpdatedBy is required.', 16, 1);
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.Company c
-            WHERE c.CompanyId = @CompanyId
-              AND c.Status = 'A'
-        )
-            RAISERROR('Company not found or inactive.', 16, 1);
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.Profile p
-            WHERE p.ProfileId = @ProfileId
-              AND p.CompanyId = @CompanyId
-              AND p.Status = 'A'
-        )
-            RAISERROR('Profile not found or inactive for the company.', 16, 1);
-
-        IF EXISTS
-        (
-            SELECT 1
-            FROM dbo.Profile p
-            WHERE p.CompanyId = @CompanyId
-              AND p.Name = @Name
-              AND p.ProfileId <> @ProfileId
-        )
-            RAISERROR('Profile name already exists for the company.', 16, 1);
-
         UPDATE dbo.Profile
         SET Name = @Name,
             Description = @Description,
@@ -84,6 +141,11 @@ BEGIN
           AND Status = 'A';
 
         COMMIT TRAN;
+
+        SELECT
+            CAST(0 AS INT) AS result_code,
+            N'Profile updated successfully.' AS result_message,
+            N'UPDATE' AS operation;
 
         SELECT
             p.ProfileId,

@@ -72,7 +72,6 @@ public sealed class RegisterCompanyResponse
     public Guid CompanyId { get; set; }
     public Guid CompanyBranchId { get; set; }
     public Guid CompanyEmissionPointId { get; set; }
-    public Guid UserCompanyId { get; set; }
     public Guid ProfileId { get; set; }
 }
 ```
@@ -167,8 +166,7 @@ HTTP `201 Created`
   "companyId": "33333333-3333-3333-3333-333333333333",
   "companyBranchId": "44444444-4444-4444-4444-444444444444",
   "companyEmissionPointId": "55555555-5555-5555-5555-555555555555",
-  "userCompanyId": "66666666-6666-6666-6666-666666666666",
-  "profileId": "77777777-7777-7777-7777-777777777777"
+  "profileId": "66666666-6666-6666-6666-666666666666"
 }
 ```
 
@@ -314,8 +312,9 @@ Responsabilidades del service:
 - Hashear `request.Password`.
 - Construir parametros del SP con `PasswordHash`.
 - Ejecutar `dbo.P_Auth_Register`.
-- Mapear el primer resultset a `RegisterCompanyResponse`.
-- Traducir errores conocidos del SP a `error.code` estable.
+- Leer primero el resultset de estado y verificar `result_code`.
+- Con estado exitoso, mapear RS2 (`PersonId`, `UserId`, `CompanyId`, `CompanyBranchId`, `CompanyEmissionPointId`, `ProfileId`) a `RegisterCompanyResponse`.
+- Mapear codigos funcionales usando `INTEGRACION_API_DATABASE_STORED_PROCEDURE_CONTRACT.md`; tratar excepciones SQL propagadas como errores tecnicos sanitizados.
 
 ## Ejemplo TypeScript
 

@@ -6,6 +6,8 @@ Objetivo:
 
 Dependencias:
     - dbo.Profile
+    - dbo.AppUser
+    - dbo.UserProfile
 */
 
 SET ANSI_NULLS ON;
@@ -23,29 +25,91 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @ProfileStatus CHAR(1);
+
     SET @UpdatedBy = LEFT(LTRIM(RTRIM(@UpdatedBy)), 80);
+
+    IF @CompanyId IS NULL OR @ProfileId IS NULL
+       OR @UpdatedBy IS NULL OR @UpdatedBy = ''
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'CompanyId, ProfileId and UpdatedBy are required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     BEGIN TRY
         BEGIN TRAN;
 
-        IF @CompanyId IS NULL
-            RAISERROR('CompanyId is required.', 16, 1);
+        SELECT @ProfileStatus = p.Status
+        FROM dbo.Profile p WITH (UPDLOCK, HOLDLOCK)
+        WHERE p.ProfileId = @ProfileId
+          AND p.CompanyId = @CompanyId;
 
-        IF @ProfileId IS NULL
-            RAISERROR('ProfileId is required.', 16, 1);
+        IF @ProfileStatus IS NULL
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(2001 AS INT) AS result_code,
+                   N'Profile not found for the company.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
-        IF @UpdatedBy IS NULL OR @UpdatedBy = ''
-            RAISERROR('UpdatedBy is required.', 16, 1);
+        IF @ProfileStatus = 'I'
+        BEGIN
+            COMMIT TRAN;
+            SELECT CAST(0 AS INT) AS result_code,
+                   N'Profile is already inactive.' AS result_message,
+                   N'NOOP' AS operation;
 
-        IF NOT EXISTS
-        (
-            SELECT 1
+            SELECT
+                p.ProfileId,
+                p.CompanyId,
+                p.Name,
+                p.Description,
+                p.Status,
+                p.CreatedBy,
+                p.CreatedAt,
+                p.UpdatedBy,
+                p.UpdatedAt
             FROM dbo.Profile p
             WHERE p.ProfileId = @ProfileId
-              AND p.CompanyId = @CompanyId
-              AND p.Status = 'A'
+              AND p.CompanyId = @CompanyId;
+            RETURN;
+        END;
+
+        IF EXISTS
+        (
+            SELECT 1
+            FROM dbo.UserProfile targetAssignment WITH (UPDLOCK, HOLDLOCK)
+            INNER JOIN dbo.AppUser u WITH (UPDLOCK, HOLDLOCK)
+                ON u.UserId = targetAssignment.UserId
+               AND u.CompanyId = targetAssignment.CompanyId
+            WHERE targetAssignment.CompanyId = @CompanyId
+              AND targetAssignment.ProfileId = @ProfileId
+              AND targetAssignment.Status = 'A'
+              AND u.Status = 'A'
+              AND NOT EXISTS
+              (
+                  SELECT 1
+                  FROM dbo.UserProfile otherAssignment WITH (UPDLOCK, HOLDLOCK)
+                  INNER JOIN dbo.Profile otherProfile WITH (UPDLOCK, HOLDLOCK)
+                      ON otherProfile.ProfileId = otherAssignment.ProfileId
+                     AND otherProfile.CompanyId = otherAssignment.CompanyId
+                  WHERE otherAssignment.UserId = targetAssignment.UserId
+                    AND otherAssignment.CompanyId = targetAssignment.CompanyId
+                    AND otherAssignment.ProfileId <> @ProfileId
+                    AND otherAssignment.Status = 'A'
+                    AND otherProfile.Status = 'A'
+              )
         )
-            RAISERROR('Profile not found or already inactive for the company.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(4002 AS INT) AS result_code,
+                   N'Cannot deactivate the last active profile assigned to an active user.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         UPDATE dbo.Profile
         SET Status = 'I',
@@ -56,6 +120,11 @@ BEGIN
           AND Status = 'A';
 
         COMMIT TRAN;
+
+        SELECT
+            CAST(0 AS INT) AS result_code,
+            N'Profile deactivated successfully.' AS result_message,
+            N'DEACTIVATE' AS operation;
 
         SELECT
             p.ProfileId,

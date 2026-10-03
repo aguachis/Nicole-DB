@@ -37,17 +37,33 @@ BEGIN
     (
         Code NVARCHAR(150) NOT NULL PRIMARY KEY
     );
+    DECLARE @ChangedRows INT = 0;
 
     SET @UpdatedBy = LEFT(LTRIM(RTRIM(@UpdatedBy)), 80);
 
     IF @CompanyId IS NULL
-        RAISERROR('CompanyId is required.', 16, 1);
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'CompanyId is required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     IF @ProfileId IS NULL
-        RAISERROR('ProfileId is required.', 16, 1);
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'ProfileId is required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     IF @UpdatedBy IS NULL OR @UpdatedBy = ''
-        RAISERROR('UpdatedBy is required.', 16, 1);
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'UpdatedBy is required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     IF NOT EXISTS
     (
@@ -57,7 +73,12 @@ BEGIN
           AND p.CompanyId = @CompanyId
           AND p.Status = 'A'
     )
-        RAISERROR('Profile not found or inactive for the company.', 16, 1);
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'Profile not found or inactive for the company.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     IF EXISTS
     (
@@ -65,7 +86,12 @@ BEGIN
         FROM @PermissionCodes pc
         WHERE NULLIF(LTRIM(RTRIM(pc.Code)), '') IS NULL
     )
-        RAISERROR('PermissionCodes contains empty values.', 16, 1);
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'PermissionCodes contains empty values.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     INSERT INTO @NormalizedPermissionCodes (Code)
     SELECT DISTINCT LTRIM(RTRIM(pc.Code))
@@ -80,7 +106,12 @@ BEGIN
            AND pm.Status = 'A'
         WHERE pm.PermissionId IS NULL
     )
-        RAISERROR('One or more permission codes are invalid or inactive.', 16, 1);
+    BEGIN
+        SELECT CAST(4003 AS INT) AS result_code,
+               N'One or more permission codes are invalid or inactive.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
 
     BEGIN TRY
         BEGIN TRAN;
@@ -97,6 +128,7 @@ BEGIN
             ON npc.Code = pm.Code
         WHERE pp.ProfileId = @ProfileId
           AND pp.Status = 'I';
+        SET @ChangedRows += @@ROWCOUNT;
 
         UPDATE pp
         SET pp.Status = 'I',
@@ -110,6 +142,7 @@ BEGIN
         WHERE pp.ProfileId = @ProfileId
           AND pp.Status = 'A'
           AND npc.Code IS NULL;
+        SET @ChangedRows += @@ROWCOUNT;
 
         INSERT INTO dbo.ProfilePermission
         (
@@ -135,8 +168,14 @@ BEGIN
             ON pp.ProfileId = @ProfileId
            AND pp.PermissionId = pm.PermissionId
         WHERE pp.ProfilePermissionId IS NULL;
+        SET @ChangedRows += @@ROWCOUNT;
 
         COMMIT TRAN;
+
+        SELECT
+            CAST(0 AS INT) AS result_code,
+            N'Profile permissions synchronized successfully.' AS result_message,
+            CASE WHEN @ChangedRows = 0 THEN N'NOOP' ELSE N'REPLACE' END AS operation;
 
         SELECT
             p.ProfileId,

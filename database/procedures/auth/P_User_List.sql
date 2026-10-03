@@ -7,7 +7,7 @@ Objetivo:
 Dependencias:
     - dbo.AppUser
     - dbo.Person
-    - dbo.UserCompany
+    - dbo.Company
 */
 
 SET ANSI_NULLS ON;
@@ -17,7 +17,7 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.P_User_List
 (
-    @CompanyId UNIQUEIDENTIFIER = NULL,
+    @CompanyId UNIQUEIDENTIFIER,
     @Status CHAR(1) = NULL,
     @Search NVARCHAR(150) = NULL
 )
@@ -28,6 +28,12 @@ BEGIN
     SET @Status = NULLIF(UPPER(LTRIM(RTRIM(@Status))), '');
     SET @Search = NULLIF(LTRIM(RTRIM(@Search)), '');
 
+    IF @CompanyId IS NULL
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code, N'CompanyId is required.' AS result_message;
+        RETURN;
+    END;
+
     IF @Status IS NOT NULL AND @Status NOT IN ('A', 'I')
     BEGIN
         SELECT CAST(1001 AS INT) AS result_code, N'Status must be A or I when provided.' AS result_message;
@@ -36,9 +42,12 @@ BEGIN
 
     SELECT
         CAST(0 AS INT) AS result_code,
-        N'Query executed successfully.' AS result_message,
+        N'Query executed successfully.' AS result_message;
+
+    SELECT
         u.UserId,
         u.PersonId,
+        u.CompanyId,
         u.Username,
         u.Email,
         u.IsBlocked,
@@ -47,7 +56,6 @@ BEGIN
         u.Status,
         u.CreatedAt,
         u.UpdatedAt,
-        uc.CompanyId,
         pi.IdentificationTypeId AS IdentificationType,
         pi.Identification,
         p.LegalName AS FirstName,
@@ -66,9 +74,6 @@ BEGIN
     FROM dbo.AppUser u
     INNER JOIN dbo.Person p
         ON p.PersonId = u.PersonId
-    LEFT JOIN dbo.UserCompany uc
-        ON uc.UserId = u.UserId
-       AND uc.Status = 'A'
     OUTER APPLY
     (
         SELECT TOP (1)
@@ -83,7 +88,7 @@ BEGIN
         ORDER BY CASE WHEN pi.IsPrimary = 1 THEN 0 ELSE 1 END, pi.PersonIdentificationId
     ) pi
     WHERE (@Status IS NULL OR u.Status = @Status)
-      AND (@CompanyId IS NULL OR uc.CompanyId = @CompanyId)
+      AND u.CompanyId = @CompanyId
       AND (
             @Search IS NULL
             OR u.Email LIKE '%' + @Search + '%'

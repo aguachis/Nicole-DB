@@ -27,64 +27,59 @@ La idea es usarlo como bitacora tecnica viva: cada decision importante debe qued
 - Validar indices contra patrones reales de consulta
 - Evitar cambios de ruptura sin estrategia de migracion
 
-## Decision 001 - Seguridad, roles y perfiles
+## Decision 001 - Seguridad, roles y perfiles single-tenant
 
 ### Estado
 
-Aprobada como modelo objetivo inicial.
+Aprobada para la base nueva. Cada usuario pertenece a una unica empresa y puede tener varios perfiles de esa empresa.
 
 ### Regla principal
 
-El rol depende de la empresa.
-
-Por lo tanto, un usuario no debe tener un perfil global unico. Un mismo usuario puede tener distintos perfiles segun la empresa a la que accede.
+El perfil depende de la empresa, pero cada usuario solo pertenece a una empresa. `AppUser` guarda `CompanyId`; `UserProfile` asigna uno o varios perfiles de esa empresa. En cada sesion se elige exactamente un perfil y se aplican solo sus permisos, sin unirlos con los de otras asignaciones.
 
 Ejemplos:
 
-- Usuario A es `ADMIN` en Empresa 1
-- Usuario A es `CAJERO` en Empresa 2
-- Usuario B es `CONSULTA` en Empresa 1
+- Usuario A es `ADMIN` en Empresa 1.
+- Usuario A tambien puede tener `CONTABILIDAD` en Empresa 1, pero elige solo uno por sesion.
+- Usuario B es `CONSULTA` en Empresa 1.
+- Usuario C puede ser `CAJERO` en Empresa 2, pero una identidad de usuario no puede pertenecer a ambas empresas.
 
 ### Entidades del modelo
 
 - `AppUser`: identidad de acceso del usuario.
-- `Company`: empresa a la que el usuario puede acceder.
+- `Company`: empresa tenant a la que pertenece el usuario.
 - `Profile`: rol o perfil definido dentro de una empresa.
+- `UserProfile`: asignaciones activas o revocadas entre usuario y perfil.
+- `UserProfileAudit`: historial append-only de cambios de asignacion.
 - `Permission`: permiso funcional del sistema.
 - `ProfilePermission`: permisos asignados a un perfil.
-- `UserCompany`: relacion entre usuario y empresa.
-- `UserCompanyProfile`: perfil del usuario dentro de una empresa.
 
 ### Relacion conceptual
 
 ```text
 AppUser
-  -> UserCompany
-      -> Company
-      -> UserCompanyProfile
-          -> Profile
-              -> ProfilePermission
-                  -> Permission
+  -> Company
+  -> UserProfile (varios perfiles de la misma empresa)
+      -> Profile
+          -> ProfilePermission
+              -> Permission
 ```
 
 ### Regla de integridad importante
 
 `Profile` pertenece a una `Company`.
 
-`UserCompanyProfile` debe validar que el perfil asignado pertenezca a la misma empresa del `UserCompany`.
+Cada fila de `UserProfile` debe referenciar al usuario y al perfil con el mismo `CompanyId`.
 
-Por eso el modelo usa claves compuestas de apoyo:
+Las FKs compuestas usan las claves:
 
+- `AppUser(UserId, CompanyId)`
 - `Profile(ProfileId, CompanyId)`
-- `UserCompany(UserCompanyId, CompanyId)`
+- `UserProfile(UserId, CompanyId)` y `(ProfileId, CompanyId)`
 
-Y `UserCompanyProfile` referencia ambas para evitar asignar a un usuario un perfil de otra empresa.
+No se crean `UserCompany` ni un puente multiempresa: la empresa del usuario sigue siendo unica. `UserProfile` es exclusivamente la relacion de multiples perfiles dentro de esa empresa.
 
-### Modelo que se reemplaza
-
-El modelo objetivo reemplaza la idea de `UserProfile` global.
-
-`UserProfile` no debe ser la referencia principal para la nueva base porque no resuelve correctamente el escenario multiempresa.
+El cambio se implementa en el esquema de creacion inicial. No se preparan migraciones de datos ni scripts `ALTER` para una base existente.
 
 ### Permisos
 
@@ -105,15 +100,13 @@ Los permisos se asignan al perfil mediante `ProfilePermission`, no directamente 
 Cuando se registra una empresa con su primer usuario:
 
 1. Se crea o identifica la persona.
-2. Se crea el usuario.
-3. Se crea la empresa.
-4. Se crea la sucursal inicial.
-5. Se crea el punto de emision inicial.
-6. Se crea la relacion `UserCompany`.
-7. Se crea o identifica el perfil `ADMIN` para esa empresa.
-8. Se crean permisos base si no existen.
-9. Se asignan permisos base al perfil `ADMIN`.
-10. Se asigna el perfil `ADMIN` al usuario mediante `UserCompanyProfile`.
+2. Se crea la empresa.
+3. Se crea la sucursal inicial.
+4. Se crea el punto de emision inicial.
+5. Se crea o identifica el perfil `ADMIN` para esa empresa.
+6. Se crean permisos base si no existen.
+7. Se asignan permisos base al perfil `ADMIN`.
+8. Se crea `AppUser` con `CompanyId`, y en la misma transaccion se crea su asignacion inicial en `UserProfile` y el evento `ASSIGN` en `UserProfileAudit`.
 
 ### Scripts relacionados
 
@@ -121,8 +114,6 @@ Cuando se registra una empresa con su primer usuario:
 - `database/tables/08-create-table-profile.sql`
 - `database/tables/09-create-table-permission.sql`
 - `database/tables/10-create-table-profile-permission.sql`
-- `database/tables/11-create-table-user-company.sql`
-- `database/tables/12-create-table-user-company-profile.sql`
 - `database/procedures/auth/P_Auth_Register.sql`
 - `database/docs/db/integrations/INTEGRACION_API_AUTH_REGISTER.md`
 
@@ -131,8 +122,7 @@ Cuando se registra una empresa con su primer usuario:
 - Definir catalogo inicial de permisos por modulo.
 - Definir perfiles base sugeridos por empresa.
 - Revisar si existiran perfiles plantilla globales para crear perfiles por empresa.
-- Actualizar el script consolidado si todavia contiene `UserProfile` como modelo principal.
-- Definir consultas/SPs para obtener permisos efectivos del usuario por empresa.
+- Definir consultas/SPs para obtener permisos efectivos del usuario a partir de su perfil.
 
 ## Backlog inicial
 
@@ -140,7 +130,7 @@ Cuando se registra una empresa con su primer usuario:
 - Definir orden oficial de ejecucion de scripts.
 - Crear matriz de modulos y permisos.
 - Crear SP o vista para permisos efectivos por usuario y empresa.
-- Revisar indices para login, seleccion de empresa y validacion de permisos.
+- Revisar indices para login, contexto tenant y validacion de permisos.
 
 ## Ejemplo 001 - Roles y permisos para usuarios
 
@@ -179,12 +169,12 @@ Permisos:
 
 ### Lectura funcional
 
-Para crear usuarios dentro de una empresa, el usuario autenticado debe tener el permiso `user.create` en esa empresa.
+Para crear usuarios dentro de una empresa, el usuario autenticado debe tener el permiso `user.create` en su empresa asignada.
 
-No basta con que el usuario exista ni con que tenga un perfil llamado `ADMIN` en otra empresa. La validacion siempre debe hacerse con:
+No basta con que el usuario exista ni con que tenga un perfil llamado `ADMIN`. La validacion siempre debe hacerse con:
 
 - usuario autenticado
-- empresa seleccionada
+- empresa asignada al usuario autenticado
 - permiso requerido
 
 ### Consulta conceptual de permisos efectivos
@@ -195,17 +185,18 @@ SELECT DISTINCT
     p.Name,
     p.ModuleCode
 FROM dbo.AppUser u
-INNER JOIN dbo.UserCompany uc
-    ON uc.UserId = u.UserId
-   AND uc.Status = 'A'
-INNER JOIN dbo.UserCompanyProfile ucp
-    ON ucp.UserCompanyId = uc.UserCompanyId
-   AND ucp.CompanyId = uc.CompanyId
-   AND ucp.Status = 'A'
+INNER JOIN dbo.Company c
+    ON c.CompanyId = u.CompanyId
+   AND c.Status = 'A'
 INNER JOIN dbo.Profile pr
-    ON pr.ProfileId = ucp.ProfileId
-   AND pr.CompanyId = uc.CompanyId
+    ON pr.ProfileId = @ProfileId
+   AND pr.CompanyId = u.CompanyId
    AND pr.Status = 'A'
+INNER JOIN dbo.UserProfile up
+    ON up.UserId = u.UserId
+   AND up.CompanyId = u.CompanyId
+   AND up.ProfileId = pr.ProfileId
+   AND up.Status = 'A'
 INNER JOIN dbo.ProfilePermission pp
     ON pp.ProfileId = pr.ProfileId
    AND pp.Status = 'A'
@@ -213,7 +204,8 @@ INNER JOIN dbo.Permission p
     ON p.PermissionId = pp.PermissionId
    AND p.Status = 'A'
 WHERE u.UserId = @UserId
-  AND uc.CompanyId = @CompanyId;
+  AND u.CompanyId = @CompanyId
+  AND pr.ProfileId = @ProfileId;
 ```
 
 ### Validacion para crear usuarios
@@ -223,17 +215,18 @@ IF NOT EXISTS
 (
     SELECT 1
     FROM dbo.AppUser u
-    INNER JOIN dbo.UserCompany uc
-        ON uc.UserId = u.UserId
-       AND uc.Status = 'A'
-    INNER JOIN dbo.UserCompanyProfile ucp
-        ON ucp.UserCompanyId = uc.UserCompanyId
-       AND ucp.CompanyId = uc.CompanyId
-       AND ucp.Status = 'A'
+    INNER JOIN dbo.Company c
+        ON c.CompanyId = u.CompanyId
+       AND c.Status = 'A'
     INNER JOIN dbo.Profile pr
-        ON pr.ProfileId = ucp.ProfileId
-       AND pr.CompanyId = uc.CompanyId
+        ON pr.ProfileId = @ProfileId
+       AND pr.CompanyId = u.CompanyId
        AND pr.Status = 'A'
+    INNER JOIN dbo.UserProfile up
+        ON up.UserId = u.UserId
+       AND up.CompanyId = u.CompanyId
+       AND up.ProfileId = pr.ProfileId
+       AND up.Status = 'A'
     INNER JOIN dbo.ProfilePermission pp
         ON pp.ProfileId = pr.ProfileId
        AND pp.Status = 'A'
@@ -241,7 +234,8 @@ IF NOT EXISTS
         ON p.PermissionId = pp.PermissionId
        AND p.Status = 'A'
     WHERE u.UserId = @CurrentUserId
-      AND uc.CompanyId = @CompanyId
+      AND u.CompanyId = @CompanyId
+      AND pr.ProfileId = @ProfileId
       AND p.Code = N'user.create'
 )
 BEGIN
@@ -292,9 +286,6 @@ VALUES
     (@ReadOnlyProfileId, @ProfileReadPermissionId, 'A', N'mock.seed');
 ```
 
-### Pendiente tecnico
+### Validacion reutilizable de permisos
 
-Convertir la validacion de permisos en una funcion o stored procedure reutilizable, por ejemplo:
-
-- `dbo.FN_UserHasPermission(@UserId, @CompanyId, @PermissionCode)`
-- `dbo.P_Security_ValidatePermission(@UserId, @CompanyId, @PermissionCode)`
+La funcion `dbo.fn_HasEffectivePermission(@UserId, @CompanyId, @ProfileId, @PermissionCode)` valida que el perfil siga activo y asignado al usuario y consulta exclusivamente sus permisos.

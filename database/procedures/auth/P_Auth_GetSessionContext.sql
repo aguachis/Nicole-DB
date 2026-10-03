@@ -6,19 +6,18 @@ Objetivo:
     datos de usuario, empresa, perfil y permisos efectivos.
 
 Reglas:
-    - Entrada requerida: @UserId
+    - Entradas requeridas: @UserId y @ProfileId elegido para esta sesion
     - Aplica solo registros activos (Status = 'A')
-    - Valida cardinalidad operativa esperada:
-      1 usuario activo -> 1 empresa activa -> 1 perfil activo
-    - Si detecta inconsistencias, detiene la ejecucion con RAISERROR
+    - UserProfile valida que el perfil elegido este asignado activamente al usuario
+    - Los permisos se obtienen exclusivamente del perfil elegido para esta sesion
+    - Los errores tecnicos inesperados se propagan con THROW
 
 Dependencias:
     - dbo.AppUser
     - dbo.Person
-    - dbo.UserCompany
     - dbo.Company
-    - dbo.UserCompanyProfile
     - dbo.Profile
+    - dbo.UserProfile
     - dbo.ProfilePermission
     - dbo.Permission
 */
@@ -30,20 +29,32 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.P_Auth_GetSessionContext
 (
-    @UserId UNIQUEIDENTIFIER
+    @UserId UNIQUEIDENTIFIER,
+    @ProfileId UNIQUEIDENTIFIER
 )
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @UserCompanyId UNIQUEIDENTIFIER;
     DECLARE @CompanyId UNIQUEIDENTIFIER;
-    DECLARE @ProfileId UNIQUEIDENTIFIER;
-    DECLARE @ActiveCompanyCount INT;
-    DECLARE @ActiveProfileCount INT;
 
-    IF @UserId IS NULL
-        RAISERROR('UserId is required.', 16, 1);
+    IF @UserId IS NULL OR @ProfileId IS NULL
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'UserId and ProfileId are required.' AS result_message;
+        RETURN;
+    END;
+
+    SELECT @CompanyId = u.CompanyId
+    FROM dbo.AppUser u
+    WHERE u.UserId = @UserId;
+
+    IF @CompanyId IS NULL
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'User not found.' AS result_message;
+        RETURN;
+    END;
 
     IF NOT EXISTS
     (
@@ -55,62 +66,47 @@ BEGIN
           AND u.Status = 'A'
           AND p.Status = 'A'
     )
-        RAISERROR('User not found or inactive.', 16, 1);
+    BEGIN
+        SELECT CAST(2002 AS INT) AS result_code,
+               N'User not found or inactive.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.Company c
+        WHERE c.CompanyId = @CompanyId
+          AND c.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(2002 AS INT) AS result_code,
+               N'User company is not active.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.UserProfile up
+        INNER JOIN dbo.Profile pr
+            ON pr.ProfileId = up.ProfileId
+           AND pr.CompanyId = up.CompanyId
+        WHERE up.UserId = @UserId
+          AND up.CompanyId = @CompanyId
+          AND up.ProfileId = @ProfileId
+          AND up.Status = 'A'
+          AND pr.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(3001 AS INT) AS result_code,
+               N'Profile is not actively assigned to the user for this session.' AS result_message;
+        RETURN;
+    END;
 
     SELECT
-        @ActiveCompanyCount = COUNT(*)
-    FROM dbo.UserCompany uc
-    INNER JOIN dbo.Company c
-        ON c.CompanyId = uc.CompanyId
-    WHERE uc.UserId = @UserId
-      AND uc.Status = 'A'
-      AND c.Status = 'A';
-
-    IF @ActiveCompanyCount = 0
-        RAISERROR('User has no active company.', 16, 1);
-
-    IF @ActiveCompanyCount > 1
-        RAISERROR('User has more than one active company.', 16, 1);
-
-    SELECT TOP 1
-        @UserCompanyId = uc.UserCompanyId,
-        @CompanyId = uc.CompanyId
-    FROM dbo.UserCompany uc
-    INNER JOIN dbo.Company c
-        ON c.CompanyId = uc.CompanyId
-    WHERE uc.UserId = @UserId
-      AND uc.Status = 'A'
-      AND c.Status = 'A'
-    ORDER BY uc.CreatedAt ASC;
-
-    SELECT
-        @ActiveProfileCount = COUNT(*)
-    FROM dbo.UserCompanyProfile ucp
-    INNER JOIN dbo.Profile pr
-        ON pr.ProfileId = ucp.ProfileId
-       AND pr.CompanyId = ucp.CompanyId
-    WHERE ucp.UserCompanyId = @UserCompanyId
-      AND ucp.CompanyId = @CompanyId
-      AND ucp.Status = 'A'
-      AND pr.Status = 'A';
-
-    IF @ActiveProfileCount = 0
-        RAISERROR('User has no active profile for the company.', 16, 1);
-
-    IF @ActiveProfileCount > 1
-        RAISERROR('User has more than one active profile for the company.', 16, 1);
-
-    SELECT TOP 1
-        @ProfileId = ucp.ProfileId
-    FROM dbo.UserCompanyProfile ucp
-    INNER JOIN dbo.Profile pr
-        ON pr.ProfileId = ucp.ProfileId
-       AND pr.CompanyId = ucp.CompanyId
-    WHERE ucp.UserCompanyId = @UserCompanyId
-      AND ucp.CompanyId = @CompanyId
-      AND ucp.Status = 'A'
-      AND pr.Status = 'A'
-    ORDER BY ucp.CreatedAt ASC;
+        CAST(0 AS INT) AS result_code,
+        N'Session context loaded successfully.' AS result_message;
 
     SELECT
         u.UserId,

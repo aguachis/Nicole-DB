@@ -2,7 +2,7 @@
 
 ## Estado
 
-Actualizada contra BD Nicole el 2026-06-19.
+Alineada al modelo single-tenant objetivo de la nueva base de datos.
 
 ## Tabla
 
@@ -10,7 +10,7 @@ Actualizada contra BD Nicole el 2026-06-19.
 
 ## Objetivo
 
-Representa un perfil o rol dentro de una empresa. El modelo es multiempresa: el mismo nombre de perfil puede existir en empresas distintas, pero no se repite dentro de la misma empresa.
+Representa un perfil funcional dentro de una empresa tenant. El mismo nombre puede existir en empresas distintas, pero no se repite dentro de una misma empresa. Un usuario de la empresa puede tener varias asignaciones en `UserProfile`; el perfil activo se elige por sesion.
 
 ## Campos
 
@@ -32,7 +32,7 @@ Representa un perfil o rol dentro de una empresa. El modelo es multiempresa: el 
 | --- | --- | --- | --- |
 | `PK_Profile` | Primary key | `ProfileId` | Identificador unico. |
 | `UQ_Profile_Company_Name` | Unique | `CompanyId`, `Name` | Evita perfiles duplicados por empresa. |
-| `UQ_Profile_ProfileId_CompanyId` | Unique | `ProfileId`, `CompanyId` | Soporta FK compuesta desde `UserCompanyProfile`. |
+| `UQ_Profile_ProfileId_CompanyId` | Unique | `ProfileId`, `CompanyId` | Soporta la FK compuesta desde `UserProfile`. |
 | `DF_Profile_ProfileId` | Default | `ProfileId` | `newsequentialid()`. |
 | `DF_Profile_Status` | Default | `Status` | `A`. |
 | `DF_Profile_CreatedAt` | Default | `CreatedAt` | `sysdatetime()`. |
@@ -47,7 +47,8 @@ Representa un perfil o rol dentro de una empresa. El modelo es multiempresa: el 
 | `Profile.CompanyId -> Company.CompanyId` | Muchos a 1 | Perfil definido por empresa. |
 | `Profile.Status -> EntityStatus.StatusCode` | Muchos a 1 | Estado canonico. |
 | `ProfilePermission.ProfileId -> Profile.ProfileId` | Muchos a 1 | Permisos asignados al perfil. |
-| `UserCompanyProfile(ProfileId, CompanyId) -> Profile(ProfileId, CompanyId)` | Muchos a 1 | Valida que el perfil pertenezca a la empresa del usuario. |
+| `UserProfile.(ProfileId, CompanyId) -> Profile.(ProfileId, CompanyId)` | Muchos a 1 | Valida que el perfil asignado pertenezca a la empresa unica del usuario. |
+| `UserProfile.UserId -> AppUser.UserId` | Muchos a 1 | Asignaciones multiples de perfiles por usuario. |
 
 ## Modelos de Aplicacion
 

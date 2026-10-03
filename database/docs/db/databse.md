@@ -1,6 +1,6 @@
 # Diccionario de datos de Nicole
 
-La fuente ejecutable del esquema es `database/tables/` y el manifiesto de creación inicial. Este documento resume las entidades necesarias para el modelo multiempresa y el registro de clientes.
+La fuente ejecutable del esquema es `database/tables/` y el manifiesto de creación inicial. El modelo de acceso es single-tenant por usuario; los datos comerciales de clientes siguen separados por empresa.
 
 ## Identidad global
 
@@ -16,7 +16,7 @@ La FK compuesta `(DefaultBillingIdentificationId, PersonId)` asegura que la iden
 
 ## Seguridad
 
-Los procedimientos validan permisos efectivos mediante `AppUser -> UserCompany -> UserCompanyProfile -> Profile -> ProfilePermission -> Permission`. El rol `nicole_app` ejecuta procedimientos públicos y no tiene DML directo sobre `Person`, `PersonIdentification` ni `Client`.
+Los procedimientos validan permisos efectivos mediante `AppUser -> Profile -> ProfilePermission -> Permission`; `AppUser.CompanyId` delimita el tenant del usuario. El rol `nicole_app` ejecuta procedimientos públicos y no tiene DML directo sobre `Person`, `PersonIdentification` ni `Client`.
 
 ## Entidades principales
 
@@ -24,7 +24,7 @@ Los procedimientos validan permisos efectivos mediante `AppUser -> UserCompany -
 | --- | --- |
 | Catálogos | `EntityStatus`, `IdentificationType`, `PersonType` |
 | Maestro global | `Person`, `PersonIdentification` |
-| Multiempresa | `Company`, `CompanyBranch`, `CompanyEmissionPoint`, `Client` |
-| Seguridad | `AppUser`, `UserCompany`, `Profile`, `Permission`, `ProfilePermission`, `UserCompanyProfile` |
+| Tenants | `Company`, `CompanyBranch`, `CompanyEmissionPoint`, `Client` |
+| Seguridad | `AppUser`, `Profile`, `Permission`, `ProfilePermission` |
 
 Los diagramas de relaciones están en [ER_DIAGRAM.md](ER_DIAGRAM.md) y [databse-diagrama.md](databse-diagrama.md).

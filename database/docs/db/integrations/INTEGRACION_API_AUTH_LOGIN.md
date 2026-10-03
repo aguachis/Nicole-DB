@@ -6,7 +6,7 @@
 
 ## Proposito
 
-Validar las credenciales de un usuario registrado. El backend debe recibir `email` y `password`, ejecutar `dbo.P_Auth_Login` para consultar el hash almacenado por email, validar la contrasena contra ese hash y devolver el `userId` cuando el acceso es valido.
+Validar las credenciales de un usuario registrado. El backend recibe `email` y `password`, valida la contrasena contra el hash almacenado y, si las credenciales son validas, consulta los perfiles asignados para que el usuario elija el contexto de acceso.
 
 El SP no recibe la clave plana. El backend no debe exponer si fallo el email, la clave, el estado inactivo o el bloqueo del usuario.
 
@@ -54,6 +54,14 @@ public sealed class LoginSpResult
 public sealed class LoginResponse
 {
     public Guid UserId { get; set; }
+    public List<LoginProfileOption> AvailableProfiles { get; set; } = new();
+}
+
+public sealed class LoginProfileOption
+{
+    public Guid ProfileId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
 }
 ```
 
@@ -109,15 +117,26 @@ EXEC dbo.P_Auth_Login
     @Email = @Email;
 ```
 
+`dbo.P_Auth_Login` devuelve primero el resultset de estado (`result_code`, `result_message`). Si el estado es exitoso, el siguiente resultset contiene `UserExists`, `UserId` y `PasswordHash`. La ausencia de credenciales coincidentes es un resultado de consulta exitoso con `UserExists = 0`, no un error tecnico del SP.
+
 ## Respuesta Exitosa
 
 HTTP `200 OK`
 
 ```json
 {
-  "userId": "22222222-2222-2222-2222-222222222222"
+  "userId": "22222222-2222-2222-2222-222222222222",
+  "availableProfiles": [
+    {
+      "profileId": "77777777-7777-7777-7777-777777777777",
+      "name": "Ventas",
+      "description": "Gestion comercial"
+    }
+  ]
 }
 ```
+
+Al elegir un perfil, el cliente solicita el establecimiento del contexto de sesion con `POST /api/auth/session/profile` y `profileId`. La API deriva `UserId` de las credenciales ya verificadas, invoca `P_Auth_GetSessionContext` con ambos valores y solo emite o actualiza el token despues de validar el perfil y sus permisos.
 
 ## Errores Esperados
 
@@ -242,11 +261,15 @@ Responsabilidades del service:
 - Validar payload.
 - Construir parametros del SP solo con `Email`.
 - Ejecutar `dbo.P_Auth_Login`.
-- Mapear el primer resultset a `LoginSpResult`.
+- Mapear RS1 a `StoredProcedureStatus` y detener el procesamiento si `result_code` no es cero.
+- Mapear RS2 a `LoginSpResult`.
 - Si `UserExists` es `false`, `UserId` es `null` o `PasswordHash` es `null`, devolver `401` con `AUTH_LOGIN_INVALID_CREDENTIALS`.
 - Validar `request.Password` contra `PasswordHash` usando el verificador seguro del backend.
 - Si la verificacion falla, devolver `401` con `AUTH_LOGIN_INVALID_CREDENTIALS`.
 - Si la verificacion pasa, devolver `UserId` en `LoginResponse`.
+- Despues de verificar las credenciales, ejecutar `dbo.P_UserProfile_ListByUser` con el `UserId` encontrado y devolver sus perfiles activos. No consultar perfiles antes de autenticar la contrasena.
+- Si no hay perfiles activos, rechazar la creacion de sesion con error de negocio/controlado; no inferir ni combinar permisos.
+- No crear el contexto final ni emitir un token con permisos hasta que el usuario elija un `ProfileId` de la lista.
 - No exponer si fallo el email, la clave, el bloqueo o el estado del usuario.
 
 ## Ejemplo TypeScript

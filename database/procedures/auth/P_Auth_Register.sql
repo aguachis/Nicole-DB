@@ -6,14 +6,10 @@ Objetivo:
 
 Flujo:
     1. Busca o crea la persona del usuario
-    2. Crea el usuario en dbo.AppUser
-    3. Crea la empresa
-    4. Crea sucursal y punto de emision iniciales
-    5. Crea la relacion UserCompany
-    6. Busca o crea el perfil ADMIN para esa empresa
-    7. Crea permisos base si no existen
-    8. Asigna permisos base al perfil ADMIN
-    9. Asigna el perfil al usuario en la empresa
+    2. Crea la empresa, sucursal y punto de emision iniciales
+    3. Busca o crea el perfil ADMIN de la empresa
+    4. Crea permisos base si no existen y los asigna al perfil
+    5. Crea el usuario asociado directamente a esa empresa y perfil
 
 Reglas:
     - El login oficial es Email
@@ -26,11 +22,11 @@ Dependencias:
     - dbo.Company
     - dbo.CompanyBranch
     - dbo.CompanyEmissionPoint
-    - dbo.UserCompany
     - dbo.Profile
     - dbo.Permission
     - dbo.ProfilePermission
-    - dbo.UserCompanyProfile
+    - dbo.UserProfile
+    - dbo.UserProfileAudit
 */
 
 SET ANSI_NULLS ON;
@@ -62,8 +58,8 @@ BEGIN
     DECLARE @CompanyId UNIQUEIDENTIFIER;
     DECLARE @CompanyBranchId UNIQUEIDENTIFIER;
     DECLARE @CompanyEmissionPointId UNIQUEIDENTIFIER;
-    DECLARE @UserCompanyId UNIQUEIDENTIFIER;
     DECLARE @ProfileId UNIQUEIDENTIFIER;
+    DECLARE @UserProfileId UNIQUEIDENTIFIER;
     DECLARE @CreatedBy NVARCHAR(80);
 
     SET @Email = LOWER(LTRIM(RTRIM(@Email)));
@@ -82,39 +78,122 @@ BEGIN
         BEGIN TRAN;
 
         IF @Email IS NULL OR @Email = ''
-            RAISERROR('Email is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'Email is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF @PasswordHash IS NULL OR LTRIM(RTRIM(@PasswordHash)) = ''
-            RAISERROR('PasswordHash is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'PasswordHash is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF @PersonIdentificationType IS NULL OR LTRIM(RTRIM(@PersonIdentificationType)) = ''
-            RAISERROR('PersonIdentificationType is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'PersonIdentificationType is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.IdentificationType it
+            WHERE it.IdentificationTypeId = @PersonIdentificationType
+        )
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1002 AS INT) AS result_code,
+                   N'PersonIdentificationType is not supported.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.IdentificationType it
+            WHERE it.IdentificationTypeId = @PersonIdentificationType
+              AND it.IsActive = 1
+        )
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(2002 AS INT) AS result_code,
+                   N'PersonIdentificationType is inactive.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF @PersonIdentification IS NULL OR @PersonIdentification = ''
-            RAISERROR('PersonIdentification is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'PersonIdentification is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF @PersonName IS NULL OR @PersonName = ''
-            RAISERROR('PersonName is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'PersonName is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF @CompanyBusinessName IS NULL OR @CompanyBusinessName = ''
-            RAISERROR('CompanyBusinessName is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'CompanyBusinessName is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF @CompanyIdentification IS NULL OR @CompanyIdentification = ''
-            RAISERROR('CompanyIdentification is required.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(1001 AS INT) AS result_code,
+                   N'CompanyIdentification is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF EXISTS (
             SELECT 1
             FROM dbo.AppUser u
             WHERE u.Email = @Email
         )
-            RAISERROR('Email already exists.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(4001 AS INT) AS result_code,
+                   N'Email already exists.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         IF EXISTS (
             SELECT 1
             FROM dbo.Company c
             WHERE c.Identification = @CompanyIdentification
         )
-            RAISERROR('CompanyIdentification already exists.', 16, 1);
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT CAST(4001 AS INT) AS result_code,
+                   N'CompanyIdentification already exists.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
 
         SELECT @PersonId = pi.PersonId
         FROM dbo.PersonIdentification pi
@@ -151,35 +230,6 @@ BEGIN
         END
 
         SET @UserId = NEWID();
-
-        INSERT INTO dbo.AppUser
-        (
-            UserId,
-            PersonId,
-            Username,
-            Email,
-            PasswordHash,
-            IsBlocked,
-            RequiresNewPassword,
-            MustUpdate,
-            Status,
-            CreatedBy,
-            CreatedAt
-        )
-        VALUES
-        (
-            @UserId,
-            @PersonId,
-            @Username,
-            @Email,
-            @PasswordHash,
-            0,
-            0,
-            0,
-            'A',
-            @CreatedBy,
-            SYSDATETIME()
-        );
 
         SET @CompanyId = NEWID();
 
@@ -257,27 +307,6 @@ BEGIN
             @CompanyBranchId,
             @EmissionPointCode,
             N'Punto de emision principal',
-            'A',
-            @CreatedBy,
-            SYSDATETIME()
-        );
-
-        SET @UserCompanyId = NEWID();
-
-        INSERT INTO dbo.UserCompany
-        (
-            UserCompanyId,
-            UserId,
-            CompanyId,
-            Status,
-            CreatedBy,
-            CreatedAt
-        )
-        VALUES
-        (
-            @UserCompanyId,
-            @UserId,
-            @CompanyId,
             'A',
             @CreatedBy,
             SYSDATETIME()
@@ -396,10 +425,43 @@ BEGIN
               AND pp.PermissionId = p.PermissionId
         );
 
-        INSERT INTO dbo.UserCompanyProfile
+        SET @UserProfileId = NEWID();
+
+        INSERT INTO dbo.AppUser
         (
-            UserCompanyProfileId,
-            UserCompanyId,
+            UserId,
+            PersonId,
+            CompanyId,
+            Username,
+            Email,
+            PasswordHash,
+            IsBlocked,
+            RequiresNewPassword,
+            MustUpdate,
+            Status,
+            CreatedBy,
+            CreatedAt
+        )
+        VALUES
+        (
+            @UserId,
+            @PersonId,
+            @CompanyId,
+            @Username,
+            @Email,
+            @PasswordHash,
+            0,
+            0,
+            0,
+            'A',
+            @CreatedBy,
+            SYSDATETIME()
+        );
+
+        INSERT INTO dbo.UserProfile
+        (
+            UserProfileId,
+            UserId,
             CompanyId,
             ProfileId,
             Status,
@@ -408,8 +470,8 @@ BEGIN
         )
         VALUES
         (
-            NEWID(),
-            @UserCompanyId,
+            @UserProfileId,
+            @UserId,
             @CompanyId,
             @ProfileId,
             'A',
@@ -417,7 +479,29 @@ BEGIN
             SYSDATETIME()
         );
 
+        INSERT INTO dbo.UserProfileAudit
+        (
+            UserId,
+            CompanyId,
+            ProfileId,
+            OperationCode,
+            Actor
+        )
+        VALUES
+        (
+            @UserId,
+            @CompanyId,
+            @ProfileId,
+            'ASSIGN',
+            @CreatedBy
+        );
+
         COMMIT TRAN;
+
+        SELECT
+            CAST(0 AS INT) AS result_code,
+            N'User and company registered successfully.' AS result_message,
+            N'REGISTER' AS operation;
 
         SELECT
             @PersonId AS PersonId,
@@ -425,23 +509,13 @@ BEGIN
             @CompanyId AS CompanyId,
             @CompanyBranchId AS CompanyBranchId,
             @CompanyEmissionPointId AS CompanyEmissionPointId,
-            @UserCompanyId AS UserCompanyId,
             @ProfileId AS ProfileId;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0
             ROLLBACK TRAN;
 
-        DECLARE @ErrorMessage NVARCHAR(4000);
-        DECLARE @ErrorSeverity INT;
-        DECLARE @ErrorState INT;
-
-        SELECT
-            @ErrorMessage = ERROR_MESSAGE(),
-            @ErrorSeverity = ERROR_SEVERITY(),
-            @ErrorState = ERROR_STATE();
-
-        RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+        THROW;
     END CATCH;
 END;
 GO

@@ -17,6 +17,7 @@ IF OBJECT_ID(N'dbo.P_Person_ResolveIdentification',N'P') IS NULL
 REVOKE SELECT, INSERT, UPDATE, DELETE ON dbo.Person FROM nicole_app;
 REVOKE SELECT, INSERT, UPDATE, DELETE ON dbo.PersonIdentification FROM nicole_app;
 REVOKE SELECT, INSERT, UPDATE, DELETE ON dbo.Client FROM nicole_app;
+DENY INSERT, UPDATE, DELETE ON dbo.UserProfileAudit TO nicole_app;
 
 GRANT EXECUTE ON dbo.P_Person_ResolveIdentification TO nicole_app;
 GRANT EXECUTE ON dbo.P_Client_Create TO nicole_app;

@@ -34,12 +34,14 @@ BEGIN
     IF @Email IS NULL
         OR @Email = ''
     BEGIN
-        SELECT
-            CAST(0 AS BIT) AS UserExists,
-            CAST(NULL AS UNIQUEIDENTIFIER) AS UserId,
-            CAST(NULL AS NVARCHAR(500)) AS PasswordHash;
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'Email is required.' AS result_message;
         RETURN;
     END;
+
+    SELECT
+        CAST(0 AS INT) AS result_code,
+        N'Login lookup completed.' AS result_message;
 
     SELECT
         @UserId = u.UserId,

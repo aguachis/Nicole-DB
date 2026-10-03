@@ -30,19 +30,22 @@ BEGIN
 
     IF @UserId IS NULL
     BEGIN
-        SELECT CAST(1001 AS INT) AS result_code, N'UserId is required.' AS result_message;
+        SELECT CAST(1001 AS INT) AS result_code, N'UserId is required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
-    IF @Status NOT IN ('A', 'I')
+    IF @Status IS NULL OR @Status NOT IN ('A', 'I')
     BEGIN
-        SELECT CAST(1001 AS INT) AS result_code, N'Status must be A or I.' AS result_message;
+        SELECT CAST(1001 AS INT) AS result_code, N'Status must be A or I.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
     IF @UpdatedBy IS NULL OR @UpdatedBy = ''
     BEGIN
-        SELECT CAST(1001 AS INT) AS result_code, N'UpdatedBy is required.' AS result_message;
+        SELECT CAST(1001 AS INT) AS result_code, N'UpdatedBy is required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
@@ -52,7 +55,8 @@ BEGIN
 
     IF @CurrentStatus IS NULL
     BEGIN
-        SELECT CAST(2001 AS INT) AS result_code, N'User not found.' AS result_message;
+        SELECT CAST(2001 AS INT) AS result_code, N'User not found.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
@@ -61,6 +65,9 @@ BEGIN
         SELECT
             CAST(0 AS INT) AS result_code,
             N'No changes applied. User is already in target status.' AS result_message,
+            N'NOOP' AS operation;
+
+        SELECT
             u.UserId,
             u.PersonId,
             u.Username,
@@ -93,6 +100,9 @@ BEGIN
         SELECT
             CAST(0 AS INT) AS result_code,
             N'User status updated successfully.' AS result_message,
+            N'SET_STATUS' AS operation;
+
+        SELECT
             u.UserId,
             u.PersonId,
             u.Username,
@@ -112,9 +122,7 @@ BEGIN
         IF @@TRANCOUNT > 0
             ROLLBACK TRAN;
 
-        SELECT
-            CAST(-5000 AS INT) AS result_code,
-            ERROR_MESSAGE() AS result_message;
+        THROW;
     END CATCH
 END;
 GO

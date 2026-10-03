@@ -6,6 +6,8 @@ La base se define desde `database/20260905_001_crear_bd_registro_global_clientes
 
 ## Modelo de identidad y clientes
 
+Cada `AppUser` pertenece a una sola empresa tenant (`CompanyId`). Sus perfiles se asignan mediante `UserProfile`, cuyas FKs compuestas garantizan que todos pertenecen a esa misma empresa. Despues de validar las credenciales, el usuario elige un perfil activo para la sesion; las autorizaciones usan solo ese perfil y no combinan permisos. La empresa se obtiene de la identidad autenticada y nunca se acepta como tenant arbitrario desde el cliente.
+
 | Tabla | Propiedad | Función |
 | --- | --- | --- |
 | `Person` | Global | Persona natural o jurídica, nombre legal y nombre comercial opcional. |

@@ -13,12 +13,12 @@ Uso:
     - Company
     - CompanyBranch
     - CompanyEmissionPoint
-    - AppUser
     - Profile
+    - AppUser
+    - UserProfile
+    - UserProfileAudit
     - Permission
     - ProfilePermission
-    - UserCompany
-    - UserCompanyProfile
 
 Notas:
     - El script es idempotente: no duplica registros si se vuelve a ejecutar.
@@ -37,8 +37,7 @@ DECLARE @CompanyBranchId UNIQUEIDENTIFIER = '33333333-3333-3333-3333-33333333333
 DECLARE @CompanyEmissionPointId UNIQUEIDENTIFIER = '44444444-4444-4444-4444-444444444444';
 DECLARE @UserId UNIQUEIDENTIFIER = '55555555-5555-5555-5555-555555555555';
 DECLARE @ProfileId UNIQUEIDENTIFIER = '66666666-6666-6666-6666-666666666666';
-DECLARE @UserCompanyId UNIQUEIDENTIFIER = '99999999-9999-9999-9999-999999999999';
-DECLARE @UserCompanyProfileId UNIQUEIDENTIFIER = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+DECLARE @UserProfileId UNIQUEIDENTIFIER = '77777777-7777-7777-7777-777777777777';
 
 IF NOT EXISTS (SELECT 1 FROM dbo.EntityStatus WHERE StatusCode = 'A')
 BEGIN
@@ -289,40 +288,6 @@ BEGIN
     );
 END;
 
-IF NOT EXISTS (SELECT 1 FROM dbo.AppUser WHERE Email = N'nicole.mock@example.com')
-BEGIN
-    INSERT INTO dbo.AppUser
-    (
-        UserId,
-        PersonId,
-        Username,
-        PasswordHash,
-        Email,
-        IsBlocked,
-        RequiresNewPassword,
-        MustUpdate,
-        Status,
-        CreatedBy
-    )
-    VALUES
-    (
-        @UserId,
-        @RepresentativePersonId,
-        N'nicole.admin',
-        N'mock-password-hash-change-me',
-        N'nicole.mock@example.com',
-        0,
-        1,
-        0,
-        'A',
-        @CreatedBy
-    );
-END;
-
-SELECT @UserId = UserId
-FROM dbo.AppUser
-WHERE Email = N'nicole.mock@example.com';
-
 IF NOT EXISTS (
     SELECT 1
     FROM dbo.Profile
@@ -354,6 +319,87 @@ SELECT @ProfileId = ProfileId
 FROM dbo.Profile
 WHERE CompanyId = @CompanyId
   AND Name = N'ADMIN';
+
+IF NOT EXISTS (SELECT 1 FROM dbo.AppUser WHERE Email = N'nicole.mock@example.com')
+BEGIN
+    INSERT INTO dbo.AppUser
+    (
+        UserId,
+        PersonId,
+        CompanyId,
+        Username,
+        PasswordHash,
+        Email,
+        IsBlocked,
+        RequiresNewPassword,
+        MustUpdate,
+        Status,
+        CreatedBy
+    )
+    VALUES
+    (
+        @UserId,
+        @RepresentativePersonId,
+        @CompanyId,
+        N'nicole.admin',
+        N'mock-password-hash-change-me',
+        N'nicole.mock@example.com',
+        0,
+        1,
+        0,
+        'A',
+        @CreatedBy
+    );
+END;
+
+SELECT @UserId = UserId
+FROM dbo.AppUser
+WHERE Email = N'nicole.mock@example.com';
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM dbo.UserProfile
+    WHERE UserId = @UserId
+      AND ProfileId = @ProfileId
+)
+BEGIN
+    INSERT INTO dbo.UserProfile
+    (
+        UserProfileId,
+        UserId,
+        CompanyId,
+        ProfileId,
+        Status,
+        CreatedBy
+    )
+    VALUES
+    (
+        @UserProfileId,
+        @UserId,
+        @CompanyId,
+        @ProfileId,
+        'A',
+        @CreatedBy
+    );
+
+    INSERT INTO dbo.UserProfileAudit
+    (
+        UserId,
+        CompanyId,
+        ProfileId,
+        OperationCode,
+        Actor
+    )
+    VALUES
+    (
+        @UserId,
+        @CompanyId,
+        @ProfileId,
+        'ASSIGN',
+        @CreatedBy
+    );
+END;
 
 DECLARE @BasePermissions TABLE
 (
@@ -429,60 +475,4 @@ WHERE NOT EXISTS
       AND pp.PermissionId = p.PermissionId
 );
 
-IF NOT EXISTS (
-    SELECT 1
-    FROM dbo.UserCompany
-    WHERE UserId = @UserId
-      AND CompanyId = @CompanyId
-)
-BEGIN
-    INSERT INTO dbo.UserCompany
-    (
-        UserCompanyId,
-        UserId,
-        CompanyId,
-        Status,
-        CreatedBy
-    )
-    VALUES
-    (
-        @UserCompanyId,
-        @UserId,
-        @CompanyId,
-        'A',
-        @CreatedBy
-    );
-END;
-
-SELECT @UserCompanyId = UserCompanyId
-FROM dbo.UserCompany
-WHERE UserId = @UserId
-  AND CompanyId = @CompanyId;
-
-IF NOT EXISTS (
-    SELECT 1
-    FROM dbo.UserCompanyProfile
-    WHERE UserCompanyId = @UserCompanyId
-      AND ProfileId = @ProfileId
-)
-BEGIN
-    INSERT INTO dbo.UserCompanyProfile
-    (
-        UserCompanyProfileId,
-        UserCompanyId,
-        CompanyId,
-        ProfileId,
-        Status,
-        CreatedBy
-    )
-    VALUES
-    (
-        @UserCompanyProfileId,
-        @UserCompanyId,
-        @CompanyId,
-        @ProfileId,
-        'A',
-        @CreatedBy
-    );
-END;
 GO

@@ -6,29 +6,27 @@ Definicion inicial para base nueva.
 
 ## Regla principal
 
-El rol depende de la empresa.
+Cada usuario pertenece a una sola empresa y puede tener varios perfiles dentro de ella. Cada sesion elige un perfil activo y nunca combina los permisos de perfiles alternativos.
 
 Por eso el modelo recomendado es:
 
 - `AppUser`: identidad de acceso
-- `Company`: empresa a la que accede
+- `Company`: empresa tenant del usuario
 - `Profile`: rol definido por empresa
+- `UserProfile`: asignaciones activas/inactivas dentro de la empresa unica
+- `UserProfileAudit`: historial append-only de asignaciones y revocaciones
 - `Permission`: permiso funcional
 - `ProfilePermission`: permisos asignados a cada rol
-- `UserCompany`: acceso del usuario a una empresa
-- `UserCompanyProfile`: rol del usuario dentro de una empresa
 
 ## Scripts base
 
 - `database/tables/07-create-table-app-user.sql`
 - `database/tables/08-create-table-profile.sql`
+- `database/tables/11-create-table-user-profile.sql`
+- `database/tables/12-create-table-user-profile-audit.sql`
 - `database/tables/09-create-table-permission.sql`
 - `database/tables/10-create-table-profile-permission.sql`
-- `database/tables/11-create-table-user-company.sql`
-- `database/tables/12-create-table-user-company-profile.sql`
 
 ## Comentario de diseno
 
-Este modelo reemplaza la idea de un `UserProfile` global.
-
-Con este enfoque, un mismo usuario puede tener distintos roles segun la empresa en la que trabaje.
+`AppUser` guarda directamente `CompanyId`, sin `ProfileId`. `UserProfile` usa las FKs compuestas `(UserId, CompanyId)` y `(ProfileId, CompanyId)` para impedir asignaciones fuera de la empresa unica del usuario. `UserProfileAudit` conserva los eventos de asignacion, reactivacion y revocacion en la misma transaccion que el cambio.

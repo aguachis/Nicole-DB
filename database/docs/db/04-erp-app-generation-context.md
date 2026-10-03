@@ -11,18 +11,19 @@ La aplicacion debe iniciar con modulos de autenticacion, empresa, usuarios, perf
 El stack puede definirse en el prompt final, pero la aplicacion debe respetar estas reglas:
 
 - Base de datos: SQL Server.
-- Modelo multiempresa.
+- Modelo single-tenant por usuario: una empresa tenant puede tener muchos usuarios.
 - Autenticacion por usuario.
 - Autorizacion por permisos, no por nombre fijo de rol.
-- Cada usuario puede pertenecer a una o varias empresas.
-- Cada usuario puede tener perfiles distintos por empresa.
+- Cada usuario pertenece a exactamente una empresa.
+- Cada usuario puede tener varios perfiles dentro de esa empresa.
+- En cada sesion se elige un unico perfil y sus permisos no se combinan con los de otros perfiles.
 - Los permisos se asignan a perfiles, no directamente a usuarios.
 
 ## Modulos iniciales de la aplicacion
 
 - Login.
 - Registro inicial de empresa y usuario administrador.
-- Selector de empresa activa.
+- Selector de perfil activo despues de autenticar; contexto de empresa fijo desde el usuario y sin selector de empresa.
 - Gestion de usuarios por empresa.
 - Gestion de perfiles por empresa.
 - Gestion de permisos por perfil.
@@ -208,7 +209,7 @@ Reglas:
 
 ### 6. AppUser
 
-Identidad de acceso a la aplicacion.
+Identidad de acceso a la aplicacion, vinculada a una sola empresa tenant. Las asignaciones de perfil se guardan en `UserProfile`.
 
 Tabla: `dbo.AppUser`
 
@@ -218,6 +219,7 @@ Campos:
 | --- | --- | --- |
 | UserId | UNIQUEIDENTIFIER | PK, default `NEWSEQUENTIALID()` |
 | PersonId | UNIQUEIDENTIFIER | FK a `Person` |
+| CompanyId | UNIQUEIDENTIFIER | FK a `Company`; empresa unica del usuario |
 | Username | NVARCHAR(80) | Opcional |
 | PasswordHash | NVARCHAR(500) | Requerido. Nunca texto plano |
 | Email | NVARCHAR(150) | Unico, requerido |
@@ -234,34 +236,34 @@ Reglas:
 
 - `Email` es unico globalmente.
 - `PasswordHash` debe almacenar un hash seguro generado desde la aplicacion.
-- El perfil del usuario no vive aqui.
+- `CompanyId` es obligatorio y permanece en `AppUser`.
+- La clave unica `(UserId, CompanyId)` permite validar mediante FK compuesta que todas sus asignaciones mantienen la empresa.
 
-### 7. UserCompany
+### 7. UserProfile
 
-Relacion entre usuario y empresa.
+Relacion historica de asignaciones de perfiles dentro de la empresa unica del usuario.
 
-Tabla: `dbo.UserCompany`
+Tabla: `dbo.UserProfile`
 
 Campos:
 
 | Campo | Tipo | Reglas |
 | --- | --- | --- |
-| UserCompanyId | UNIQUEIDENTIFIER | PK, default `NEWSEQUENTIALID()` |
-| UserId | UNIQUEIDENTIFIER | FK a `AppUser` |
-| CompanyId | UNIQUEIDENTIFIER | FK a `Company` |
-| Status | CHAR(1) | FK a `EntityStatus` |
-| CreatedBy | NVARCHAR(80) | Requerido |
-| CreatedAt | DATETIME2(0) | Default `SYSDATETIME()` |
-| UpdatedBy | NVARCHAR(80) | Opcional |
-| UpdatedAt | DATETIME2(0) | Opcional |
+| UserProfileId | UNIQUEIDENTIFIER | PK, default `NEWSEQUENTIALID()` |
+| UserId | UNIQUEIDENTIFIER | Usuario asignado |
+| CompanyId | UNIQUEIDENTIFIER | Debe coincidir con la empresa de usuario y perfil |
+| ProfileId | UNIQUEIDENTIFIER | Perfil asignado |
+| Status | CHAR(1) | Estado activo/inactivo |
+| CreatedBy / CreatedAt | NVARCHAR(80) / DATETIME2(0) | Auditoria de creacion |
+| UpdatedBy / UpdatedAt | NVARCHAR(80) / DATETIME2(0) | Auditoria de revocacion/reactivacion |
 
-Reglas:
+La clave unica `(UserId, ProfileId)` conserva una sola fila por asignacion. Las FKs compuestas `(UserId, CompanyId)` y `(ProfileId, CompanyId)` impiden asignar perfiles de otra empresa.
 
-- `UserId + CompanyId` debe ser unico.
-- Un usuario puede estar en varias empresas.
-- Una empresa puede tener varios usuarios.
+### 8. UserProfileAudit
 
-### 8. Profile
+Historial append-only de eventos `ASSIGN`, `REACTIVATE` y `REVOKE`, con usuario, empresa, perfil, actor y fecha UTC. El evento se inserta en la misma transaccion que el cambio en `UserProfile`; `UPDATE` y `DELETE` se rechazan.
+
+### 9. Profile
 
 Rol o perfil definido dentro de una empresa.
 
@@ -287,7 +289,7 @@ Reglas:
 - El perfil depende de la empresa.
 - Ejemplos: `ADMIN`, `CAJERO`, `CONSULTA`.
 
-### 9. Permission
+### 10. Permission
 
 Permiso funcional del sistema.
 
@@ -313,7 +315,7 @@ Reglas:
 - `Code` es el identificador tecnico que debe usar la app.
 - Ejemplos: `user.read`, `user.create`, `company.read`.
 
-### 10. ProfilePermission
+### 11. ProfilePermission
 
 Permisos asignados a cada perfil.
 
@@ -337,61 +339,33 @@ Reglas:
 - `ProfileId + PermissionId` debe ser unico.
 - Los permisos se asignan al perfil, no directamente al usuario.
 
-### 11. UserCompanyProfile
-
-Perfil asignado a un usuario dentro de una empresa.
-
-Tabla: `dbo.UserCompanyProfile`
-
-Campos:
-
-| Campo | Tipo | Reglas |
-| --- | --- | --- |
-| UserCompanyProfileId | UNIQUEIDENTIFIER | PK, default `NEWSEQUENTIALID()` |
-| UserCompanyId | UNIQUEIDENTIFIER | FK compuesta con `CompanyId` a `UserCompany` |
-| CompanyId | UNIQUEIDENTIFIER | Parte de validacion multiempresa |
-| ProfileId | UNIQUEIDENTIFIER | FK compuesta con `CompanyId` a `Profile` |
-| Status | CHAR(1) | FK a `EntityStatus` |
-| CreatedBy | NVARCHAR(80) | Requerido |
-| CreatedAt | DATETIME2(0) | Default `SYSDATETIME()` |
-| UpdatedBy | NVARCHAR(80) | Opcional |
-| UpdatedAt | DATETIME2(0) | Opcional |
-
-Reglas:
-
-- `UserCompanyId + ProfileId` debe ser unico.
-- Valida que el perfil pertenezca a la misma empresa del usuario.
-- Reemplaza el modelo de `UserProfile` global.
-
 ## Relacion general
 
 ```text
 Person
   -> AppUser
-      -> UserCompany
-          -> Company
-          -> UserCompanyProfile
-              -> Profile
-                  -> ProfilePermission
-                      -> Permission
+      -> Company
+      -> UserProfile -> Profile
+                          -> ProfilePermission
+                              -> Permission
 ```
 
 ## Regla principal de autorizacion
 
 La aplicacion no debe preguntar solo si el usuario es `ADMIN`.
 
-Debe validar si el usuario tiene un permiso dentro de la empresa activa.
+Debe validar si el usuario tiene un permiso dentro de su empresa asignada.
 
 Ejemplo:
 
 ```text
 Usuario autenticado: nicole.admin
-Empresa activa: Nicole Mock Store
+Empresa del usuario: Nicole Mock Store
 Accion requerida: crear usuario
 Permiso requerido: user.create
 ```
 
-La accion se permite solo si `nicole.admin` tiene un perfil activo en esa empresa y ese perfil tiene el permiso `user.create`.
+La accion se permite solo si el perfil asignado directamente al usuario esta activo y tiene el permiso `user.create`.
 
 ## Permisos iniciales sugeridos
 
@@ -442,10 +416,6 @@ DECLARE @ReadOnlyUserId UNIQUEIDENTIFIER = '55555555-5555-5555-5555-555555555557
 DECLARE @AdminProfileId UNIQUEIDENTIFIER = '66666666-6666-6666-6666-666666666666';
 DECLARE @CashierProfileId UNIQUEIDENTIFIER = '66666666-6666-6666-6666-666666666667';
 DECLARE @ReadOnlyProfileId UNIQUEIDENTIFIER = '66666666-6666-6666-6666-666666666668';
-
-DECLARE @AdminUserCompanyId UNIQUEIDENTIFIER = '99999999-9999-9999-9999-999999999999';
-DECLARE @CashierUserCompanyId UNIQUEIDENTIFIER = '99999999-9999-9999-9999-999999999998';
-DECLARE @ReadOnlyUserCompanyId UNIQUEIDENTIFIER = '99999999-9999-9999-9999-999999999997';
 
 INSERT INTO dbo.Person
 (
@@ -511,33 +481,6 @@ VALUES
     @CreatedBy
 );
 
-INSERT INTO dbo.AppUser
-(
-    UserId,
-    PersonId,
-    Username,
-    PasswordHash,
-    Email,
-    IsBlocked,
-    RequiresNewPassword,
-    MustUpdate,
-    Status,
-    CreatedBy
-)
-VALUES
-(
-    @AdminUserId,
-    @RepresentativePersonId,
-    N'nicole.admin',
-    N'mock-password-hash-change-me',
-    N'nicole.mock@example.com',
-    0,
-    1,
-    0,
-    'A',
-    @CreatedBy
-);
-
 INSERT INTO dbo.Profile
 (
     ProfileId,
@@ -552,27 +495,40 @@ VALUES
     (@CashierProfileId, @CompanyId, N'CAJERO', N'Operacion basica de caja y ventas', 'A', @CreatedBy),
     (@ReadOnlyProfileId, @CompanyId, N'CONSULTA', N'Usuario de solo lectura', 'A', @CreatedBy);
 
-INSERT INTO dbo.UserCompany
+BEGIN TRANSACTION;
+
+INSERT INTO dbo.AppUser
 (
-    UserCompanyId,
     UserId,
+    PersonId,
     CompanyId,
+    Username,
+    PasswordHash,
+    Email,
+    IsBlocked,
+    RequiresNewPassword,
+    MustUpdate,
     Status,
     CreatedBy
 )
 VALUES
 (
-    @AdminUserCompanyId,
     @AdminUserId,
+    @RepresentativePersonId,
     @CompanyId,
+    N'nicole.admin',
+    N'mock-password-hash-change-me',
+    N'nicole.mock@example.com',
+    0,
+    1,
+    0,
     'A',
     @CreatedBy
 );
 
-INSERT INTO dbo.UserCompanyProfile
+INSERT INTO dbo.UserProfile
 (
-    UserCompanyProfileId,
-    UserCompanyId,
+    UserId,
     CompanyId,
     ProfileId,
     Status,
@@ -580,13 +536,31 @@ INSERT INTO dbo.UserCompanyProfile
 )
 VALUES
 (
-    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-    @AdminUserCompanyId,
+    @AdminUserId,
     @CompanyId,
     @AdminProfileId,
     'A',
     @CreatedBy
 );
+
+INSERT INTO dbo.UserProfileAudit
+(
+    UserId,
+    CompanyId,
+    ProfileId,
+    OperationCode,
+    Actor
+)
+VALUES
+(
+    @AdminUserId,
+    @CompanyId,
+    @AdminProfileId,
+    'ASSIGN',
+    @CreatedBy
+);
+
+COMMIT TRANSACTION;
 ```
 
 ## Datos mock de permisos
@@ -684,17 +658,18 @@ SELECT DISTINCT
     p.Name,
     p.ModuleCode
 FROM dbo.AppUser u
-INNER JOIN dbo.UserCompany uc
-    ON uc.UserId = u.UserId
-   AND uc.Status = 'A'
-INNER JOIN dbo.UserCompanyProfile ucp
-    ON ucp.UserCompanyId = uc.UserCompanyId
-   AND ucp.CompanyId = uc.CompanyId
-   AND ucp.Status = 'A'
+INNER JOIN dbo.Company c
+    ON c.CompanyId = u.CompanyId
+   AND c.Status = 'A'
 INNER JOIN dbo.Profile pr
-    ON pr.ProfileId = ucp.ProfileId
-   AND pr.CompanyId = uc.CompanyId
+    ON pr.ProfileId = @ProfileId
+   AND pr.CompanyId = u.CompanyId
    AND pr.Status = 'A'
+INNER JOIN dbo.UserProfile up
+    ON up.UserId = u.UserId
+   AND up.CompanyId = u.CompanyId
+   AND up.ProfileId = pr.ProfileId
+   AND up.Status = 'A'
 INNER JOIN dbo.ProfilePermission pp
     ON pp.ProfileId = pr.ProfileId
    AND pp.Status = 'A'
@@ -702,7 +677,8 @@ INNER JOIN dbo.Permission p
     ON p.PermissionId = pp.PermissionId
    AND p.Status = 'A'
 WHERE u.UserId = @UserId
-  AND uc.CompanyId = @CompanyId;
+  AND u.CompanyId = @CompanyId
+  AND pr.ProfileId = @ProfileId;
 ```
 
 ## Validacion para crear usuario
@@ -710,29 +686,7 @@ WHERE u.UserId = @UserId
 Antes de crear un usuario en una empresa, la app debe validar el permiso `user.create`.
 
 ```sql
-IF NOT EXISTS
-(
-    SELECT 1
-    FROM dbo.UserCompany uc
-    INNER JOIN dbo.UserCompanyProfile ucp
-        ON ucp.UserCompanyId = uc.UserCompanyId
-       AND ucp.CompanyId = uc.CompanyId
-       AND ucp.Status = 'A'
-    INNER JOIN dbo.Profile pr
-        ON pr.ProfileId = ucp.ProfileId
-       AND pr.CompanyId = uc.CompanyId
-       AND pr.Status = 'A'
-    INNER JOIN dbo.ProfilePermission pp
-        ON pp.ProfileId = pr.ProfileId
-       AND pp.Status = 'A'
-    INNER JOIN dbo.Permission p
-        ON p.PermissionId = pp.PermissionId
-       AND p.Status = 'A'
-    WHERE uc.UserId = @CurrentUserId
-      AND uc.CompanyId = @CompanyId
-      AND uc.Status = 'A'
-      AND p.Code = N'user.create'
-)
+IF dbo.fn_HasEffectivePermission(@CurrentUserId, @CompanyId, @ProfileId, N'user.create') = 0
 BEGIN
     RAISERROR('No tiene permisos para crear usuarios en esta empresa.', 16, 1);
     RETURN;
@@ -750,12 +704,9 @@ Campos:
 
 Resultado:
 
-- Si el usuario pertenece a una sola empresa, entrar directo.
-- Si pertenece a varias empresas, mostrar selector de empresa.
-
-### Selector de empresa
-
-Mostrar empresas activas desde `UserCompany`.
+- Despues de validar credenciales, listar los perfiles activos asignados al usuario.
+- Elegir un perfil para la sesion y validar esa asignacion en `P_Auth_GetSessionContext`.
+- No mostrar selector de empresa.
 
 ### Usuarios
 
@@ -786,28 +737,26 @@ Permisos:
 ## Prompt base sugerido
 
 ```text
-Genera una aplicacion ERP inicial usando SQL Server y un modelo multiempresa.
+Genera una aplicacion ERP inicial usando SQL Server. Cada usuario pertenece a una sola empresa tenant y puede tener varios perfiles en ella. En cada sesion elige un solo perfil y no combina permisos; no implementar selector de empresa ni membresias multiempresa por usuario.
 
 Usa como base las tablas:
-EntityStatus, IdentificationType, PersonType, Person, Company, AppUser, UserCompany, Profile, Permission, ProfilePermission y UserCompanyProfile.
+EntityStatus, IdentificationType, PersonType, Person, Company, Profile, AppUser, UserProfile, UserProfileAudit, Permission y ProfilePermission.
 
 La autenticacion se hace con AppUser.
-La empresa activa se obtiene desde UserCompany.
-Los roles/perfiles dependen de la empresa mediante Profile.
-La asignacion de perfil a usuario se hace con UserCompanyProfile.
+La empresa se obtiene desde AppUser.CompanyId. UserProfile contiene los perfiles del usuario; sus FKs compuestas impiden perfiles de otra empresa.
+Despues de autenticar, permite elegir un perfil activo y establece ese perfil solo para la sesion actual.
 Los permisos se asignan al perfil mediante ProfilePermission.
 La aplicacion debe validar acciones usando Permission.Code, por ejemplo user.create para crear usuarios.
 
 Construye pantallas iniciales de:
 - Login
-- Selector de empresa
 - Gestion de usuarios
 - Gestion de perfiles
 - Gestion de permisos por perfil
 
 No uses UserProfile global.
 No valides acciones solo por nombre de perfil como ADMIN.
-Valida siempre por permiso efectivo del usuario en la empresa activa.
+Valida siempre por permiso efectivo del perfil del usuario en su empresa asignada.
 ```
 
 ## Archivos SQL fuente
@@ -818,8 +767,6 @@ Valida siempre por permiso efectivo del usuario en la empresa activa.
 - `database/tables/03-create-table-person.sql`
 - `database/tables/04-create-table-company.sql`
 - `database/tables/07-create-table-app-user.sql`
-- `database/tables/11-create-table-user-company.sql`
 - `database/tables/08-create-table-profile.sql`
 - `database/tables/09-create-table-permission.sql`
 - `database/tables/10-create-table-profile-permission.sql`
-- `database/tables/12-create-table-user-company-profile.sql`

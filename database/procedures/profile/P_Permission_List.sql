@@ -24,6 +24,10 @@ BEGIN
     SET @ModuleCode = NULLIF(LTRIM(RTRIM(@ModuleCode)), '');
 
     SELECT
+        CAST(0 AS INT) AS result_code,
+        N'Query executed successfully.' AS result_message;
+
+    SELECT
         p.PermissionId,
         p.Code,
         p.Name,

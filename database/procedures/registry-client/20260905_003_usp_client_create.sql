@@ -5,6 +5,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.P_Client_Create
     @UserId UNIQUEIDENTIFIER,
     @CompanyId UNIQUEIDENTIFIER,
+    @ProfileId UNIQUEIDENTIFIER,
     @PersonId UNIQUEIDENTIFIER,
     @DefaultBillingIdentificationId BIGINT = NULL,
     @BillingAddress NVARCHAR(500) = NULL,
@@ -37,11 +38,12 @@ BEGIN
     SET @LegalName = NULLIF(LTRIM(RTRIM(@LegalName)), N'');
     SET @TradeName = NULLIF(LTRIM(RTRIM(@TradeName)), N'');
 
-    IF dbo.fn_HasEffectivePermission(@UserId, @CompanyId, N'client.create') = 0
+    IF dbo.fn_HasEffectivePermission(@UserId, @CompanyId, @ProfileId, N'client.create') = 0
     BEGIN
-        SELECT CAST(403 AS INT) AS result_code,
+        SELECT CAST(3001 AS INT) AS result_code,
                N'Permission or tenant membership denied.' AS result_message,
-               @CorrelationId AS correlation_id;
+               @CorrelationId AS correlation_id,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
@@ -50,9 +52,10 @@ BEGIN
        OR NULLIF(LTRIM(RTRIM(@Email)), N'') IS NULL
        OR @Email NOT LIKE N'%_@_%._%'
     BEGIN
-        SELECT CAST(400 AS INT) AS result_code,
+        SELECT CAST(1001 AS INT) AS result_code,
                N'BillingAddress, Phone, and a syntactically valid Email are required local inputs.' AS result_message,
-               @CorrelationId AS correlation_id;
+               @CorrelationId AS correlation_id,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
@@ -60,25 +63,41 @@ BEGIN
     BEGIN
         SET @Normalized = dbo.fn_NormalizeIdentification(@Identification);
 
-        IF @IdentificationTypeCode IS NULL OR @Normalized = N''
-           OR @PersonKind NOT IN ('N', 'J') OR @LegalName IS NULL
+        IF @IdentificationTypeCode IS NULL OR @Normalized IS NULL OR @Normalized = N''
+           OR @PersonKind IS NULL OR @PersonKind NOT IN ('N', 'J') OR @LegalName IS NULL
         BEGIN
-            SELECT CAST(400 AS INT) AS result_code,
+            SELECT CAST(1001 AS INT) AS result_code,
                    N'Identification type, identification, person kind, and legal name are required when PersonId is null.' AS result_message,
-                   @CorrelationId AS correlation_id;
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
 
         SELECT @TypeId = IdentificationTypeId
         FROM dbo.IdentificationType
-        WHERE Code = @IdentificationTypeCode
-          AND IsActive = 1;
+        WHERE Code = @IdentificationTypeCode;
 
         IF @TypeId IS NULL
         BEGIN
-            SELECT CAST(400 AS INT) AS result_code,
-                   N'An active identification type is required.' AS result_message,
-                   @CorrelationId AS correlation_id;
+            SELECT CAST(1002 AS INT) AS result_code,
+                   N'Identification type is not supported.' AS result_message,
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
+
+        IF NOT EXISTS
+        (
+            SELECT 1
+            FROM dbo.IdentificationType it
+            WHERE it.IdentificationTypeId = @TypeId
+              AND it.IsActive = 1
+        )
+        BEGIN
+            SELECT CAST(2002 AS INT) AS result_code,
+                   N'Identification type is inactive.' AS result_message,
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
 
@@ -93,18 +112,20 @@ BEGIN
                 OR (@PersonKind = 'J' AND it.AllowsLegalEntity = 1))
         )
         BEGIN
-            SELECT CAST(422 AS INT) AS result_code,
+            SELECT CAST(1001 AS INT) AS result_code,
                    N'Identification does not satisfy its configured metadata.' AS result_message,
-                   @CorrelationId AS correlation_id;
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
     END
     ELSE IF @IdentificationTypeCode IS NOT NULL OR @Identification IS NOT NULL
          OR @PersonKind IS NOT NULL OR @LegalName IS NOT NULL OR @TradeName IS NOT NULL
     BEGIN
-        SELECT CAST(400 AS INT) AS result_code,
+        SELECT CAST(1001 AS INT) AS result_code,
                N'Manual person fields cannot be supplied when PersonId is provided.' AS result_message,
-               @CorrelationId AS correlation_id;
+               @CorrelationId AS correlation_id,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
 
@@ -124,9 +145,10 @@ BEGIN
             IF @PersonId IS NOT NULL AND @ExistingPersonStatus <> 'A'
             BEGIN
                 ROLLBACK TRANSACTION;
-                SELECT CAST(409 AS INT) AS result_code,
+                SELECT CAST(2002 AS INT) AS result_code,
                        N'Global person found but inactive.' AS result_message,
-                       @CorrelationId AS correlation_id;
+                       @CorrelationId AS correlation_id,
+                       CAST(NULL AS NVARCHAR(20)) AS operation;
                 RETURN;
             END;
 
@@ -166,9 +188,10 @@ BEGIN
         )
         BEGIN
             ROLLBACK TRANSACTION;
-            SELECT CAST(404 AS INT) AS result_code,
+            SELECT CAST(2001 AS INT) AS result_code,
                    N'Active global person not found.' AS result_message,
-                   @CorrelationId AS correlation_id;
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
 
@@ -184,9 +207,10 @@ BEGIN
         )
         BEGIN
             ROLLBACK TRANSACTION;
-            SELECT CAST(422 AS INT) AS result_code,
+            SELECT CAST(4003 AS INT) AS result_code,
                    N'Default billing identification must belong to the Person and be billable.' AS result_message,
-                   @CorrelationId AS correlation_id;
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
 
@@ -199,9 +223,10 @@ BEGIN
         )
         BEGIN
             ROLLBACK TRANSACTION;
-            SELECT CAST(409 AS INT) AS result_code,
+            SELECT CAST(4001 AS INT) AS result_code,
                    N'The Person is already a client of the authorized company.' AS result_message,
-                   @CorrelationId AS correlation_id;
+                   @CorrelationId AS correlation_id,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
 
@@ -228,6 +253,9 @@ BEGIN
     SELECT CAST(0 AS INT) AS result_code,
            N'Client created.' AS result_message,
            @CorrelationId AS correlation_id,
+           N'CREATE' AS operation;
+
+    SELECT
            @ClientId AS client_id,
            @PersonId AS person_id,
            @DefaultBillingIdentificationId AS default_billing_identification_id;

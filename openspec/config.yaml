@@ -1,58 +1,59 @@
 schema: spec-driven
 
 context: |
-	Eres un experto en bases de datos SQL Server.
-	Proyecto: definicion, diseño y estructura de la base de datos del ERP Nicole con modelo multiempresa.
-	Motor y esquema objetivo: SQL Server, esquema dbo.
-	Alcance del repositorio: DDL, relaciones, restricciones, indices, tipos, procedimientos almacenados, semillas, seguridad y su documentacion. No hay acceso a una base de datos ni entorno de pruebas desde el repositorio.
-	La ejecucion, validacion en SQL Server y certificacion del despliegue corresponden exclusivamente al DBA. No afirmar que un script fue ejecutado, compilado o validado; entregar los puntos que el DBA debe comprobar.
-	Estado actual: este repositorio contiene base core, seguridad, usuarios y configuracion inicial de empresa.
-	Inventario y facturacion aun no tienen DDL definitivo; no asumir tablas no creadas.
+  Eres un experto en bases de datos SQL Server.
+  Proyecto: definicion, diseno y estructura de la base de datos del ERP Nicole con modelo multiempresa.
+  Motor y esquema objetivo: SQL Server, esquema dbo.
+  Alcance del repositorio: DDL, relaciones, restricciones, indices, tipos, procedimientos almacenados, semillas, seguridad y su documentacion. No hay acceso a una base de datos ni entorno de pruebas desde el repositorio.
+  La ejecucion, validacion en SQL Server y certificacion del despliegue corresponden exclusivamente al DBA. No afirmar que un script fue ejecutado, compilado o validado; entregar los puntos que el DBA debe comprobar.
+  Estado actual: este repositorio contiene base core, seguridad, usuarios y configuracion inicial de empresa.
+  Inventario y facturacion aun no tienen DDL definitivo; no asumir tablas no creadas.
 
-	Fuentes de verdad del proyecto:
-	- database/docs/db/01-project-scope-and-delivery.md
-	- database/docs/db/BACKEND_DATABASE_CONTEXT.md
-	- database/docs/db/02-conventions.md
-	- database/docs/db/03-new-database-working-document.md
-	- database/docs/db/entities/**
-	- database/docs/db/stored-procedures/**
-	- database/docs/db/integrations/**
+  Fuentes de verdad del proyecto:
+  - database/docs/db/01-project-scope-and-delivery.md
+  - database/docs/db/BACKEND_DATABASE_CONTEXT.md
+  - database/docs/db/02-conventions.md
+  - database/docs/db/03-new-database-working-document.md
+  - database/docs/db/entities/**
+  - database/docs/db/stored-procedures/**
+  - database/docs/db/integrations/**
 
-	Modelo de seguridad vigente:
-	- Autenticacion por usuario.
-	- Autorizacion por permisos efectivos en la empresa activa.
-	- No autorizar por nombre de perfil fijo (por ejemplo ADMIN) sin validar permisos.
-	- Relacion clave: AppUser -> UserCompany -> UserCompanyProfile -> Profile -> ProfilePermission -> Permission.
+  Modelo objetivo de seguridad:
+  - Cada AppUser pertenece a una sola Company mediante AppUser.CompanyId.
+  - Un AppUser puede tener varios perfiles, todos definidos para esa misma Company.
+  - La asignacion usuario-perfil se representa con UserProfile y debe garantizar CompanyId coincidente mediante integridad referencial.
+  - La sesion usa un perfil activo elegido entre los perfiles activos asignados al usuario.
+  - La autorizacion se basa en permisos efectivos de ese perfil en la empresa del usuario; no se combinan perfiles ni se autoriza por un nombre fijo.
+  - No existe una relacion de membresia que permita a un usuario pertenecer a varias empresas.
+  - El cambio de modelo se incorpora al bootstrap de una base nueva; no crear migraciones de datos ni scripts ALTER para bases existentes.
 
-	Entidades core vigentes:
-	- EntityStatus, IdentificationType, PersonType, Person
-	- Company, CompanyBranch, CompanyEmissionPoint
-	- AppUser, UserCompany, Profile, Permission, ProfilePermission, UserCompanyProfile
+  Entidades core:
+  - EntityStatus, IdentificationType, PersonType, Person
+  - Company, CompanyBranch, CompanyEmissionPoint
+  - AppUser, Profile, UserProfile, UserProfileAudit, Permission, ProfilePermission
 
 rules:
-	proposal:
-		- Escribir en espanol tecnico y aterrizado a SQL Server.
-		- Incluir alcance, no-alcance, impacto en tablas/SPs/indices, orden de ejecucion y puntos de revision para el DBA.
-		- Citar archivos del repo que respaldan la decision.
-		- Si hay cambios de seguridad, explicar como se validan permisos efectivos por empresa.
-	design:
-		- Priorizar integridad referencial con FK fisicas cuando la relacion sea real y estable.
-		- Preferir PK surrogate estables y mantener claves naturales como UNIQUE cuando aplique.
-		- Estandarizar estados y auditoria (CreatedAt/CreatedBy/UpdatedAt/UpdatedBy o legacy documentado).
-		- Evitar duplicar entidades por idioma o responsabilidad.
-		- Evitar tipos no recomendados (image) y revisar uso de money y MAX sin necesidad.
-		- Homologar fechas a datetime2 cuando el contexto lo permita.
-	sql:
-		- Generar SQL compatible con SQL Server (T-SQL), esquema dbo y nombres explicitos.
-		- Antes de proponer cambios, revisar scripts y contexto vigente en database/docs/db/entities y database/docs/db/stored-procedures.
-		- Cada indice debe responder a un patron real de consulta, FK, join o filtro frecuente.
-		- Evitar indices redundantes o duplicados.
-		- En SPs: documentar objetivo, parametros, tablas afectadas, transacciones y manejo de errores.
-	security:
-		- No basar autorizacion solo en nombre de perfil.
-		- Validar permisos efectivos por UserId y CompanyId en cada endpoint o SP sensible.
-		- Mantener consistencia multiempresa al asignar perfiles (CompanyId debe coincidir en relaciones).
-	tasks:
-		- Dividir tareas por entidad/modulo con scripts pequenos y revisables.
-		- Incluir una lista de verificacion para el DBA: FK, unique, indices, permisos y casos de autorizacion; no ejecutar ni declarar esas verificaciones como realizadas desde el repositorio.
-		- Para inventario/facturacion, crear y aprobar DDL antes de proponer APIs o SPs finales.
+  proposal:
+    - Escribir en espanol tecnico y aterrizado a SQL Server.
+    - Incluir alcance, no-alcance, impacto en tablas/SPs/indices, orden de ejecucion y puntos de revision para el DBA.
+    - Citar archivos del repo que respaldan la decision.
+    - Si hay cambios de seguridad, explicar como se validan permisos efectivos por empresa y perfil activo.
+  design:
+    - Priorizar integridad referencial con FK fisicas cuando la relacion sea real y estable.
+    - Preferir PK surrogate estables y mantener claves naturales como UNIQUE cuando aplique.
+    - Estandarizar estados y auditoria (CreatedAt/CreatedBy/UpdatedAt/UpdatedBy o legacy documentado).
+    - Evitar duplicar entidades por idioma o responsabilidad.
+    - Evitar tipos no recomendados (image) y revisar uso de money y MAX sin necesidad.
+    - Homologar fechas a datetime2 cuando el contexto lo permita.
+    - Generar SQL compatible con SQL Server (T-SQL), esquema dbo y nombres explicitos.
+    - Antes de proponer cambios, revisar scripts y contexto vigente en database/docs/db/entities y database/docs/db/stored-procedures.
+    - Cada indice debe responder a un patron real de consulta, FK, join o filtro frecuente; evitar indices redundantes.
+    - En SPs, documentar objetivo, parametros, tablas afectadas, transacciones y manejo de errores.
+    - No basar autorizacion solo en nombre de perfil; validar permisos efectivos por UserId, CompanyId y ProfileId activo.
+    - Mantener CompanyId coincidente en AppUser-UserProfile-Profile y no combinar permisos de perfiles no activos en la sesion.
+  specs:
+    - Definir escenarios verificables para integridad de empresa, asignacion, revocacion y permisos efectivos del perfil activo.
+  tasks:
+    - Dividir tareas por entidad/modulo con scripts pequenos y revisables.
+    - "Incluir una lista de verificacion para el DBA: FK, unique, indices, permisos y casos de autorizacion; no ejecutar ni declarar esas verificaciones como realizadas desde el repositorio."
+    - Para inventario/facturacion, crear y aprobar DDL antes de proponer APIs o SPs finales.

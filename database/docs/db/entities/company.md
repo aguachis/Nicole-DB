@@ -2,6 +2,8 @@
 
 `dbo.Company` representa la empresa o tenant que opera el ERP. No representa una empresa cliente: una empresa que compra productos o servicios se modela como `Person` con `PersonKind = 'J'` y se vincula mediante `Client`.
 
+Cada usuario de la aplicacion pertenece a exactamente una `Company`; la FK `AppUser.CompanyId` permite muchos usuarios por empresa.
+
 | Relación | Regla |
 | --- | --- |
 | `Company.RepresentativeId -> Person.PersonId` | Representante legal opcional. |

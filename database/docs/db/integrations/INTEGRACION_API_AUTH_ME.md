@@ -2,15 +2,15 @@
 
 ## Endpoint
 
-`GET /api/auth/me?userId={userId}`
+`GET /api/auth/me`
 
 ## Proposito
 
-Obtener el contexto de sesion del usuario autenticado usando su `userId`:
+Obtener el contexto del usuario y el perfil ya validados para la sesion autenticada:
 
 - datos de usuario
 - empresa a la que pertenece
-- perfil asignado
+- perfil activo elegido para esta sesion
 - permisos efectivos
 
 La consulta se resuelve con `dbo.P_Auth_GetSessionContext`.
@@ -23,10 +23,13 @@ SP: `dbo.P_Auth_GetSessionContext`
 
 ## Regla de negocio aplicada
 
-- un usuario debe tener una sola empresa activa
-- un usuario debe tener un solo perfil activo para su empresa activa
+- `AppUser.CompanyId` identifica la unica empresa a la que pertenece el usuario.
+- `UserProfile` contiene sus multiples asignaciones, todas dentro de esa misma empresa.
+- La sesion recibe un `ProfileId` seleccionado y falla si no tiene asignacion activa o si el perfil no esta activo.
+- Los permisos se obtienen solo del perfil seleccionado; no se combinan los permisos de otros perfiles.
+- El perfil elegido se conserva en el contexto/token de esa sesion, no como un estado global en `AppUser`.
 
-Si la data no cumple esa cardinalidad, el SP devuelve error controlado.
+No existe selector de empresa en la sesion: el usuario no puede pertenecer a varias empresas.
 
 ## Clases C# Sugeridas
 
@@ -36,6 +39,7 @@ Si la data no cumple esa cardinalidad, el SP devuelve error controlado.
 public sealed class AuthMeQuery
 {
     public Guid UserId { get; set; }
+    public Guid ProfileId { get; set; }
 }
 ```
 
@@ -173,15 +177,22 @@ public sealed class ApiError
 
 ```sql
 EXEC dbo.P_Auth_GetSessionContext
-    @UserId = @UserId;
+    @UserId = @AuthenticatedUserId,
+    @ProfileId = @ValidatedSessionProfileId;
 ```
+
+`@AuthenticatedUserId` se deriva de la identidad autenticada por el backend, nunca de un parametro libre del cliente. `@ValidatedSessionProfileId` proviene de la seleccion de perfil de esa sesion; SQL vuelve a comprobar la asignacion activa antes de devolver cualquier permiso.
 
 ## Mapeo de Result Sets
 
-- RS1 -> `AuthMeUserSpResult`
-- RS2 -> `AuthMeCompanySpResult`
-- RS3 -> `AuthMeProfileSpResult`
-- RS4 -> `List<AuthMePermissionSpResult>`
+- RS1 -> estado: `result_code`, `result_message`
+- RS2 -> `AuthMeUserSpResult`
+- RS3 -> `AuthMeCompanySpResult`
+- RS4 -> `AuthMeProfileSpResult`
+- RS5 -> `List<AuthMePermissionSpResult>`
+
+El consumidor valida RS1 antes de leer los datos. Los codigos SQL se traducen a HTTP segun el contrato global; no se interpretan los mensajes como codigos.
+Los campos SQL exactos de RS2-RS5 se enumeran en `INTEGRACION_API_DATABASE_STORED_PROCEDURE_CONTRACT.md`.
 
 ## Respuesta Exitosa
 
@@ -265,8 +276,8 @@ HTTP `409 Conflict`
 {
   "error": {
     "code": "AUTH_SESSION_CONTEXT_CONFLICT",
-    "message": "User has more than one active company.",
-    "userMessage": "La sesion del usuario tiene datos inconsistentes.",
+    "message": "Profile is not actively assigned to the user for this session.",
+    "userMessage": "El perfil seleccionado ya no esta disponible para esta sesion.",
     "category": "business",
     "showToUser": true,
     "retryable": false
@@ -279,7 +290,7 @@ HTTP `409 Conflict`
 | HTTP | `error.code` | Caso |
 | --- | --- | --- |
 | `200` | N/A | Contexto de sesion obtenido correctamente. |
-| `400` | `VALIDATION_REQUIRED_FIELD` | `userId` no informado o invalido. |
+| `400` | `VALIDATION_REQUIRED_FIELD` | `userId` o `profileId` no informado o invalido. |
 | `404` | `AUTH_USER_NOT_FOUND` | Usuario no existe o esta inactivo. |
-| `409` | `AUTH_SESSION_CONTEXT_CONFLICT` | Usuario con 0 o multiples empresas/perfiles activos. |
+| `403` | `AUTH_PROFILE_NOT_ASSIGNED` | El perfil no esta activamente asignado al usuario o ya no esta disponible para la sesion. |
 | `500` | `INTERNAL_SERVER_ERROR` | Error inesperado. |

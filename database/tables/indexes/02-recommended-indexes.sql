@@ -2,7 +2,7 @@
 Script: 02-recommended-indexes.sql
 Objetivo:
     Crear indices no unicos recomendados para las consultas principales
-    de autenticacion, seleccion de empresa y permisos efectivos.
+    de autenticacion, pertenencia tenant y permisos efectivos.
 
 Notas:
     - No cambia reglas de negocio.
@@ -20,55 +20,43 @@ IF NOT EXISTS (
 BEGIN
     CREATE NONCLUSTERED INDEX IX_AppUser_PersonId
     ON dbo.AppUser (PersonId)
-    INCLUDE (UserId, Email, Status);
+    INCLUDE (UserId, Email, CompanyId, Status);
 END;
 GO
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.indexes
-    WHERE object_id = OBJECT_ID(N'dbo.UserCompany')
-      AND name = N'IX_UserCompany_User_Status'
+    WHERE object_id = OBJECT_ID(N'dbo.AppUser')
+      AND name = N'IX_AppUser_Company_Status'
 )
 BEGIN
-    CREATE NONCLUSTERED INDEX IX_UserCompany_User_Status
-    ON dbo.UserCompany (UserId, Status)
-    INCLUDE (UserCompanyId, CompanyId);
+    CREATE NONCLUSTERED INDEX IX_AppUser_Company_Status
+    ON dbo.AppUser (CompanyId, Status)
+    INCLUDE (UserId, PersonId, Email);
 END;
 GO
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.indexes
-    WHERE object_id = OBJECT_ID(N'dbo.UserCompany')
-      AND name = N'IX_UserCompany_Company_Status'
+    WHERE object_id = OBJECT_ID(N'dbo.UserProfile')
+      AND name = N'IX_UserProfile_User_Company_Status'
 )
 BEGIN
-    CREATE NONCLUSTERED INDEX IX_UserCompany_Company_Status
-    ON dbo.UserCompany (CompanyId, Status)
-    INCLUDE (UserCompanyId, UserId);
-END;
-GO
-
-IF NOT EXISTS (
-    SELECT 1 FROM sys.indexes
-    WHERE object_id = OBJECT_ID(N'dbo.UserCompanyProfile')
-      AND name = N'IX_UserCompanyProfile_UserCompany_Status'
-)
-BEGIN
-    CREATE NONCLUSTERED INDEX IX_UserCompanyProfile_UserCompany_Status
-    ON dbo.UserCompanyProfile (UserCompanyId, CompanyId, Status)
+    CREATE NONCLUSTERED INDEX IX_UserProfile_User_Company_Status
+    ON dbo.UserProfile (UserId, CompanyId, Status)
     INCLUDE (ProfileId);
 END;
 GO
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.indexes
-    WHERE object_id = OBJECT_ID(N'dbo.UserCompanyProfile')
-      AND name = N'IX_UserCompanyProfile_Profile_Status'
+    WHERE object_id = OBJECT_ID(N'dbo.UserProfile')
+      AND name = N'IX_UserProfile_Profile_Company_Status'
 )
 BEGIN
-    CREATE NONCLUSTERED INDEX IX_UserCompanyProfile_Profile_Status
-    ON dbo.UserCompanyProfile (ProfileId, CompanyId, Status)
-    INCLUDE (UserCompanyId);
+    CREATE NONCLUSTERED INDEX IX_UserProfile_Profile_Company_Status
+    ON dbo.UserProfile (ProfileId, CompanyId, Status)
+    INCLUDE (UserId);
 END;
 GO
 

@@ -1,6 +1,7 @@
 export interface AppUser {
   userId: string;
   personId: string;
+  companyId: string;
   username: string | null;
   passwordHash: string;
   email: string;

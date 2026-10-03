@@ -31,36 +31,45 @@ BEGIN
     SET @Description = NULLIF(LTRIM(RTRIM(@Description)), '');
     SET @CreatedBy = LEFT(LTRIM(RTRIM(@CreatedBy)), 80);
 
+    IF @CompanyId IS NULL OR @Name IS NULL OR @Name = ''
+       OR @CreatedBy IS NULL OR @CreatedBy = ''
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'CompanyId, Name and CreatedBy are required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.Company c
+        WHERE c.CompanyId = @CompanyId
+          AND c.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(2002 AS INT) AS result_code,
+               N'Company not found or inactive.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.Profile p
+        WHERE p.CompanyId = @CompanyId
+          AND p.Name = @Name
+    )
+    BEGIN
+        SELECT CAST(4001 AS INT) AS result_code,
+               N'Profile name already exists for the company.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
     BEGIN TRY
         BEGIN TRAN;
-
-        IF @CompanyId IS NULL
-            RAISERROR('CompanyId is required.', 16, 1);
-
-        IF @Name IS NULL OR @Name = ''
-            RAISERROR('Name is required.', 16, 1);
-
-        IF @CreatedBy IS NULL OR @CreatedBy = ''
-            RAISERROR('CreatedBy is required.', 16, 1);
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.Company c
-            WHERE c.CompanyId = @CompanyId
-              AND c.Status = 'A'
-        )
-            RAISERROR('Company not found or inactive.', 16, 1);
-
-        IF EXISTS
-        (
-            SELECT 1
-            FROM dbo.Profile p
-            WHERE p.CompanyId = @CompanyId
-              AND p.Name = @Name
-        )
-            RAISERROR('Profile name already exists for the company.', 16, 1);
-
         SET @ProfileId = NEWID();
 
         INSERT INTO dbo.Profile
@@ -85,6 +94,11 @@ BEGIN
         );
 
         COMMIT TRAN;
+
+        SELECT
+            CAST(0 AS INT) AS result_code,
+            N'Profile created successfully.' AS result_message,
+            N'CREATE' AS operation;
 
         SELECT
             p.ProfileId,

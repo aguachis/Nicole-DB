@@ -6,10 +6,13 @@ Cubrir el mantenimiento de perfiles por empresa y la sincronizacion de permisos 
 
 Flujo esperado:
 
-1. listar perfiles de la empresa activa
+1. listar perfiles de la empresa asignada al usuario autenticado
 2. crear o actualizar el perfil
 3. consultar permisos disponibles
 4. guardar el set final de permisos del perfil
+5. asignar perfiles a usuarios sin reemplazar sus otras asignaciones
+
+Los perfiles describen permisos disponibles en la empresa; no son el perfil global del usuario. Las asignaciones de usuario se consultan y mantienen con `P_UserProfile_ListByUser`, `P_UserProfile_Assign` y `P_UserProfile_Revoke` (contratos en `INTEGRACION_API_USER_SECURITY_MAINTENANCE.md`). El perfil activo se elige por sesion y sus permisos no se combinan con los de las otras asignaciones.
 
 ## Endpoints
 
@@ -20,6 +23,8 @@ Flujo esperado:
 - `DELETE /api/profiles/{profileId}?companyId={companyId}`
 - `GET /api/permissions`
 - `PUT /api/profiles/{profileId}/permissions`
+
+El backend obtiene `CompanyId` de la sesión autenticada. No debe exponer un selector que permita cambiar el tenant del usuario.
 
 ## Stored Procedures
 
@@ -40,6 +45,21 @@ Scripts:
 - `database/procedures/profile/P_Profile_Deactivate.sql`
 - `database/procedures/profile/P_Permission_List.sql`
 - `database/procedures/profile/P_ProfilePermission_ReplaceByProfile.sql`
+
+## Lectura de resultsets SQL
+
+Todos los procedimientos devuelven RS1 como estado. Se debe validar `result_code` antes de leer datos; ante un rechazo funcional no existen resultsets posteriores. En caso exitoso:
+
+| Procedimiento | Resultsets de datos |
+| --- | --- |
+| `P_Profile_ListByCompany` | RS2: listado de perfiles. |
+| `P_Profile_GetDetail` | RS2: perfil; RS3: permisos activos del perfil. |
+| `P_Profile_Create`, `P_Profile_Update` | RS2: perfil creado/actualizado con `ActivePermissionCount`. |
+| `P_Profile_Deactivate` | RS2: perfil con su nuevo estado. |
+| `P_Permission_List` | RS2: permisos activos. |
+| `P_ProfilePermission_ReplaceByProfile` | RS2: perfil y total de permisos activos; RS3: permisos activos del perfil. |
+
+Las columnas exactas de cada conjunto estan enumeradas en `INTEGRACION_API_DATABASE_STORED_PROCEDURE_CONTRACT.md`. Los codigos funcionales y el tratamiento de errores tecnicos se rigen por ese contrato global.
 
 ## Clases C# Sugeridas
 
@@ -339,7 +359,7 @@ Reglas de negocio:
 - `permissionCodes` puede venir vacio para dejar el perfil sin permisos activos.
 - `permissionCodes` no puede contener codigos vacios.
 - todos los `permissionCodes` deben existir en `dbo.Permission` y estar activos.
-- el backend debe mapear los dos resultsets de `P_Profile_GetDetail` y `P_ProfilePermission_ReplaceByProfile` al contrato HTTP final.
+- el backend debe leer primero el resultset de estado y despues mapear los resultsets de datos de `P_Profile_GetDetail` y `P_ProfilePermission_ReplaceByProfile` al contrato HTTP final.
 
 ## Errores Esperados
 
@@ -479,6 +499,6 @@ export interface ReplaceProfilePermissionsRequest {
 
 - validar payload y tenant activo
 - construir parametros de SP incluyendo auditoria `CreatedBy` o `UpdatedBy`
-- mapear `P_Profile_GetDetail` y `P_ProfilePermission_ReplaceByProfile` desde multiples resultsets
+- validar primero el resultset de estado de cada SP y mapear despues los resultsets de datos de `P_Profile_GetDetail` y `P_ProfilePermission_ReplaceByProfile`
 - traducir errores conocidos del SP a codigos HTTP y `error.code` estables
 - exponer al front un detalle enriquecido del perfil con su lista de permisos activos
