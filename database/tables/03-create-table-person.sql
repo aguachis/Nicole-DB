@@ -8,8 +8,12 @@ CREATE TABLE dbo.Person
 (
     PersonId uniqueidentifier NOT NULL CONSTRAINT DF_Person_PersonId DEFAULT (NEWSEQUENTIALID()),
     PersonKind char(1) NOT NULL,
+    FirstName nvarchar(200) NULL,
+    MiddleName nvarchar(80) NULL,
+    LastName nvarchar(80) NULL,
     LegalName nvarchar(250) NOT NULL,
     TradeName nvarchar(250) NULL,
+    Phone nvarchar(50) NULL,
     Status char(1) NOT NULL CONSTRAINT DF_Person_Status DEFAULT ('A'),
     CreatedBy nvarchar(80) NOT NULL,
     CreatedAt datetime2(0) NOT NULL CONSTRAINT DF_Person_CreatedAt DEFAULT (SYSDATETIME()),
@@ -17,6 +21,7 @@ CREATE TABLE dbo.Person
     UpdatedAt datetime2(0) NULL,
     CONSTRAINT PK_Person PRIMARY KEY CLUSTERED (PersonId),
     CONSTRAINT CK_Person_LegalName_NotBlank CHECK (LEN(LTRIM(RTRIM(LegalName)))>0),
+    CONSTRAINT CK_Person_Phone_NotBlank CHECK (Phone IS NULL OR LEN(LTRIM(RTRIM(Phone))) > 0),
     CONSTRAINT FK_Person_PersonKind FOREIGN KEY (PersonKind) REFERENCES dbo.PersonType(PersonTypeId),
     CONSTRAINT FK_Person_Status FOREIGN KEY (Status) REFERENCES dbo.EntityStatus(StatusCode)
 );

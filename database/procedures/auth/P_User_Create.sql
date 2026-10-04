@@ -32,7 +32,9 @@ CREATE OR ALTER PROCEDURE dbo.P_User_Create
     @Email NVARCHAR(150),
     @PasswordHash NVARCHAR(500),
     @Username NVARCHAR(80) = NULL,
-    @CreatedBy NVARCHAR(80)
+    @CreatedBy NVARCHAR(80),
+    @ActorUserId UNIQUEIDENTIFIER = NULL,
+    @ActorProfileId UNIQUEIDENTIFIER = NULL
 )
 AS
 BEGIN
@@ -89,6 +91,14 @@ BEGIN
         RETURN;
     END;
 
+    IF @ActorUserId IS NULL OR @ActorProfileId IS NULL
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'ActorUserId and ActorProfileId are required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
     IF NOT EXISTS
     (
         SELECT 1
@@ -98,6 +108,46 @@ BEGIN
     )
     BEGIN
         SELECT CAST(2002 AS INT) AS result_code, N'Company not found or inactive.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.AppUser u
+        WHERE u.UserId = @ActorUserId
+          AND u.CompanyId = @CompanyId
+          AND u.Status = 'A'
+          AND u.IsBlocked = 0
+    )
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'Actor is not valid for this company.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.UserProfile up
+        WHERE up.UserId = @ActorUserId
+          AND up.CompanyId = @CompanyId
+          AND up.ProfileId = @ActorProfileId
+          AND up.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(3001 AS INT) AS result_code,
+               N'Actor profile is not active for this session.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF dbo.fn_HasEffectivePermission(@ActorUserId, @CompanyId, @ActorProfileId, N'user.create') = 0
+    BEGIN
+        SELECT CAST(403 AS INT) AS result_code,
+               N'Permission denied: user.create is required.' AS result_message,
                CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;
@@ -158,6 +208,27 @@ BEGIN
                 SELECT CAST(2002 AS INT) AS result_code, N'Person not found or inactive.' AS result_message,
                        CAST(NULL AS NVARCHAR(20)) AS operation;
                 RETURN;
+            END;
+
+            IF @PersonFirstName IS NOT NULL OR @PersonMiddleName IS NOT NULL OR @PersonLastName IS NOT NULL OR @PersonPhone IS NOT NULL
+            BEGIN
+                UPDATE dbo.Person
+                SET
+                    FirstName = CASE WHEN @PersonFirstName IS NOT NULL THEN @PersonFirstName ELSE FirstName END,
+                    MiddleName = CASE WHEN @PersonMiddleName IS NOT NULL THEN @PersonMiddleName ELSE MiddleName END,
+                    LastName = CASE WHEN @PersonLastName IS NOT NULL THEN @PersonLastName ELSE LastName END,
+                    Phone = CASE WHEN @PersonPhone IS NOT NULL THEN @PersonPhone ELSE Phone END,
+                    LegalName = LTRIM(RTRIM(
+                        CONCAT(
+                            COALESCE(CASE WHEN @PersonFirstName IS NOT NULL THEN @PersonFirstName ELSE FirstName END, N''),
+                            N' ',
+                            COALESCE(CASE WHEN @PersonMiddleName IS NOT NULL THEN @PersonMiddleName ELSE MiddleName END + N' ', N''),
+                            COALESCE(CASE WHEN @PersonLastName IS NOT NULL THEN @PersonLastName ELSE LastName END, N'')
+                        )
+                    )),
+                    UpdatedBy = @CreatedBy,
+                    UpdatedAt = SYSDATETIME()
+                WHERE PersonId = @PersonId;
             END;
         END
         ELSE
@@ -263,8 +334,12 @@ BEGIN
                 (
                     PersonId,
                     PersonKind,
+                    FirstName,
+                    MiddleName,
+                    LastName,
                     LegalName,
                     TradeName,
+                    Phone,
                     Status,
                     CreatedBy,
                     CreatedAt
@@ -273,8 +348,12 @@ BEGIN
                 (
                     @PersonId,
                     'N',
+                    @PersonFirstName,
+                    @PersonMiddleName,
+                    @PersonLastName,
                     LTRIM(RTRIM(CONCAT(@PersonFirstName, N' ', COALESCE(@PersonMiddleName + N' ', N''), @PersonLastName))),
                     NULL,
+                    @PersonPhone,
                     'A',
                     @CreatedBy,
                     SYSDATETIME()

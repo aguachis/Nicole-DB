@@ -208,8 +208,12 @@ BEGIN
             (
                 PersonId,
                 PersonKind,
+                FirstName,
+                MiddleName,
+                LastName,
                 LegalName,
                 TradeName,
+                Phone,
                 Status,
                 CreatedBy,
                 CreatedAt
@@ -218,8 +222,12 @@ BEGIN
             (
                 @PersonId,
                 'N',
+                @PersonName,
+                NULL,
+                @PersonLastName,
                 CONCAT(@PersonName, CASE WHEN @PersonLastName IS NULL THEN N'' ELSE N' '+@PersonLastName END),
                 NULL,
+                @PersonPhone,
                 'A',
                 @CreatedBy,
                 SYSDATETIME()

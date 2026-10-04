@@ -18,7 +18,9 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.P_UserProfile_ListByUser
 (
-    @UserId UNIQUEIDENTIFIER
+    @UserId UNIQUEIDENTIFIER,
+    @ActorUserId UNIQUEIDENTIFIER = NULL,
+    @ActorProfileId UNIQUEIDENTIFIER = NULL
 )
 AS
 BEGIN
@@ -31,6 +33,48 @@ BEGIN
     BEGIN
         SELECT CAST(1001 AS INT) AS result_code,
                N'UserId is required.' AS result_message;
+        RETURN;
+    END;
+
+    IF @ActorUserId IS NULL OR @ActorProfileId IS NULL
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'ActorUserId and ActorProfileId are required.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.AppUser u
+        WHERE u.UserId = @ActorUserId
+          AND u.Status = 'A'
+          AND u.IsBlocked = 0
+    )
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'Actor is not valid.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.UserProfile up
+        WHERE up.UserId = @ActorUserId
+          AND up.ProfileId = @ActorProfileId
+          AND up.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(3001 AS INT) AS result_code,
+               N'Actor profile is not active for this session.' AS result_message;
+        RETURN;
+    END;
+
+    IF dbo.fn_HasEffectivePermission(@ActorUserId, (SELECT u.CompanyId FROM dbo.AppUser u WHERE u.UserId = @ActorUserId), @ActorProfileId, N'profile.read') = 0
+    BEGIN
+        SELECT CAST(403 AS INT) AS result_code,
+               N'Permission denied: profile.read is required.' AS result_message;
         RETURN;
     END;
 
@@ -64,6 +108,19 @@ BEGIN
     BEGIN
         SELECT CAST(2002 AS INT) AS result_code,
                N'Company is inactive.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.AppUser au
+        WHERE au.UserId = @ActorUserId
+          AND au.CompanyId = @CurrentCompanyId
+    )
+    BEGIN
+        SELECT CAST(3001 AS INT) AS result_code,
+               N'Actor does not belong to the target company.' AS result_message;
         RETURN;
     END;
 

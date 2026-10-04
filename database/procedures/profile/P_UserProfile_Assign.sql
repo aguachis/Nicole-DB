@@ -22,7 +22,9 @@ CREATE OR ALTER PROCEDURE dbo.P_UserProfile_Assign
     @CompanyId UNIQUEIDENTIFIER,
     @UserId UNIQUEIDENTIFIER,
     @ProfileId UNIQUEIDENTIFIER,
-    @Actor NVARCHAR(80)
+    @Actor NVARCHAR(80),
+    @ActorUserId UNIQUEIDENTIFIER = NULL,
+    @ActorProfileId UNIQUEIDENTIFIER = NULL
 )
 AS
 BEGIN
@@ -39,10 +41,51 @@ BEGIN
     SET @Actor = LEFT(LTRIM(RTRIM(@Actor)), 80);
 
     IF @CompanyId IS NULL OR @UserId IS NULL OR @ProfileId IS NULL
+       OR @ActorUserId IS NULL OR @ActorProfileId IS NULL
        OR @Actor IS NULL OR @Actor = ''
     BEGIN
         SELECT CAST(1001 AS INT) AS result_code,
-               N'CompanyId, UserId, ProfileId and Actor are required.' AS result_message,
+               N'CompanyId, UserId, ProfileId, ActorUserId, ActorProfileId and Actor are required.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.AppUser u
+        WHERE u.UserId = @ActorUserId
+          AND u.CompanyId = @CompanyId
+          AND u.Status = 'A'
+          AND u.IsBlocked = 0
+    )
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'Actor is not valid for this company.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.UserProfile up
+        WHERE up.UserId = @ActorUserId
+          AND up.CompanyId = @CompanyId
+          AND up.ProfileId = @ActorProfileId
+          AND up.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(3001 AS INT) AS result_code,
+               N'Actor profile is not active for this session.' AS result_message,
+               CAST(NULL AS NVARCHAR(20)) AS operation;
+        RETURN;
+    END;
+
+    IF dbo.fn_HasEffectivePermission(@ActorUserId, @CompanyId, @ActorProfileId, N'profile.assign') = 0
+    BEGIN
+        SELECT CAST(403 AS INT) AS result_code,
+               N'Permission denied: profile.assign is required.' AS result_message,
                CAST(NULL AS NVARCHAR(20)) AS operation;
         RETURN;
     END;

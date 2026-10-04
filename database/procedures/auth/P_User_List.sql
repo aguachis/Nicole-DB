@@ -19,7 +19,9 @@ CREATE OR ALTER PROCEDURE dbo.P_User_List
 (
     @CompanyId UNIQUEIDENTIFIER,
     @Status CHAR(1) = NULL,
-    @Search NVARCHAR(150) = NULL
+    @Search NVARCHAR(150) = NULL,
+    @ActorUserId UNIQUEIDENTIFIER = NULL,
+    @ActorProfileId UNIQUEIDENTIFIER = NULL
 )
 AS
 BEGIN
@@ -31,6 +33,50 @@ BEGIN
     IF @CompanyId IS NULL
     BEGIN
         SELECT CAST(1001 AS INT) AS result_code, N'CompanyId is required.' AS result_message;
+        RETURN;
+    END;
+
+    IF @ActorUserId IS NULL OR @ActorProfileId IS NULL
+    BEGIN
+        SELECT CAST(1001 AS INT) AS result_code,
+               N'ActorUserId and ActorProfileId are required.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.AppUser u
+        WHERE u.UserId = @ActorUserId
+          AND u.CompanyId = @CompanyId
+          AND u.Status = 'A'
+          AND u.IsBlocked = 0
+    )
+    BEGIN
+        SELECT CAST(2001 AS INT) AS result_code,
+               N'Actor is not valid for this company.' AS result_message;
+        RETURN;
+    END;
+
+    IF NOT EXISTS
+    (
+        SELECT 1
+        FROM dbo.UserProfile up
+        WHERE up.UserId = @ActorUserId
+          AND up.CompanyId = @CompanyId
+          AND up.ProfileId = @ActorProfileId
+          AND up.Status = 'A'
+    )
+    BEGIN
+        SELECT CAST(3001 AS INT) AS result_code,
+               N'Actor profile is not active for this session.' AS result_message;
+        RETURN;
+    END;
+
+    IF dbo.fn_HasEffectivePermission(@ActorUserId, @CompanyId, @ActorProfileId, N'user.read') = 0
+    BEGIN
+        SELECT CAST(403 AS INT) AS result_code,
+               N'Permission denied: user.read is required.' AS result_message;
         RETURN;
     END;
 
@@ -58,15 +104,15 @@ BEGIN
         u.UpdatedAt,
         pi.IdentificationTypeId AS IdentificationType,
         pi.Identification,
-        p.LegalName AS FirstName,
-        CAST(NULL AS NVARCHAR(80)) AS LastName,
-        CAST(NULL AS NVARCHAR(80)) AS MiddleName,
-        CAST(NULL AS NVARCHAR(50)) AS Phone,
-        CAST(NULL AS NVARCHAR(80)) AS lastName,
-        CAST(NULL AS NVARCHAR(80)) AS middleName,
-        p.LegalName AS firstName,
+        p.FirstName,
+        p.LastName,
+        p.MiddleName,
+        p.Phone,
+        p.LastName AS lastName,
+        p.MiddleName AS middleName,
+        p.FirstName AS firstName,
         pi.Identification AS identification,
-        CAST(NULL AS NVARCHAR(50)) AS phone,
+        p.Phone AS phone,
         p.PersonKind,
         p.LegalName,
         p.TradeName,
