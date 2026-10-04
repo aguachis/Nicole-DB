@@ -23,7 +23,7 @@ CREATE OR ALTER PROCEDURE dbo.P_User_Create
     @CompanyId UNIQUEIDENTIFIER,
     @ProfileId UNIQUEIDENTIFIER,
     @PersonId UNIQUEIDENTIFIER = NULL,
-    @PersonIdentificationType CHAR(2) = NULL,
+    @PersonIdentificationTypeCode VARCHAR(32) = NULL,
     @PersonIdentification NVARCHAR(20) = NULL,
     @PersonFirstName NVARCHAR(200) = NULL,
     @PersonMiddleName NVARCHAR(80) = NULL,
@@ -44,11 +44,15 @@ BEGIN
     DECLARE @UserId UNIQUEIDENTIFIER;
     DECLARE @UserProfileId UNIQUEIDENTIFIER;
     DECLARE @ExistingPersonStatus CHAR(1);
+    DECLARE @ValidatedPersonIdentificationTypeId CHAR(2);
+    DECLARE @NormalizedPersonIdentification NVARCHAR(64);
+    DECLARE @IdentificationResultCode INT;
+    DECLARE @IdentificationResultMessage NVARCHAR(250);
 
     SET @Email = LOWER(LTRIM(RTRIM(@Email)));
     SET @PasswordHash = LTRIM(RTRIM(@PasswordHash));
     SET @Username = NULLIF(LTRIM(RTRIM(@Username)), '');
-    SET @PersonIdentificationType = NULLIF(UPPER(LTRIM(RTRIM(@PersonIdentificationType))), '');
+    SET @PersonIdentificationTypeCode = NULLIF(UPPER(LTRIM(RTRIM(@PersonIdentificationTypeCode))), '');
     SET @PersonIdentification = NULLIF(LTRIM(RTRIM(@PersonIdentification)), '');
     SET @PersonFirstName = NULLIF(LTRIM(RTRIM(@PersonFirstName)), '');
     SET @PersonMiddleName = NULLIF(LTRIM(RTRIM(@PersonMiddleName)), '');
@@ -233,14 +237,6 @@ BEGIN
         END
         ELSE
         BEGIN
-            IF @PersonIdentificationType IS NULL OR @PersonIdentificationType = ''
-            BEGIN
-                ROLLBACK TRAN;
-                SELECT CAST(1001 AS INT) AS result_code, N'PersonIdentificationType is required when PersonId is null.' AS result_message,
-                       CAST(NULL AS NVARCHAR(20)) AS operation;
-                RETURN;
-            END;
-
             IF @PersonIdentification IS NULL OR @PersonIdentification = ''
             BEGIN
                 ROLLBACK TRAN;
@@ -249,47 +245,19 @@ BEGIN
                 RETURN;
             END;
 
-            IF NOT EXISTS
-            (
-                SELECT 1
-                FROM dbo.IdentificationType it
-                WHERE it.IdentificationTypeId = @PersonIdentificationType
-            )
-            BEGIN
-                ROLLBACK TRAN;
-                SELECT CAST(1002 AS INT) AS result_code,
-                       N'PersonIdentificationType is not supported.' AS result_message,
-                       CAST(NULL AS NVARCHAR(20)) AS operation;
-                RETURN;
-            END;
+            EXEC dbo.P_Identification_ValidateInput
+                @IdentificationTypeCode = @PersonIdentificationTypeCode,
+                @Identification = @PersonIdentification,
+                @PersonKind = 'N',
+                @IdentificationTypeId = @ValidatedPersonIdentificationTypeId OUTPUT,
+                @NormalizedIdentification = @NormalizedPersonIdentification OUTPUT,
+                @ResultCode = @IdentificationResultCode OUTPUT,
+                @ResultMessage = @IdentificationResultMessage OUTPUT;
 
-            IF NOT EXISTS
-            (
-                SELECT 1
-                FROM dbo.IdentificationType it
-                WHERE it.IdentificationTypeId = @PersonIdentificationType
-                  AND it.IsActive = 1
-            )
+            IF @IdentificationResultCode <> 0
             BEGIN
                 ROLLBACK TRAN;
-                SELECT CAST(2002 AS INT) AS result_code,
-                       N'PersonIdentificationType is inactive.' AS result_message,
-                       CAST(NULL AS NVARCHAR(20)) AS operation;
-                RETURN;
-            END;
-
-            IF NOT EXISTS
-            (
-                SELECT 1
-                FROM dbo.IdentificationType it
-                WHERE it.IdentificationTypeId = @PersonIdentificationType
-                  AND it.AllowsNaturalPerson = 1
-                  AND LEN(dbo.fn_NormalizeIdentification(@PersonIdentification)) BETWEEN it.MinLength AND it.MaxLength
-                  AND (it.IsNumericOnly = 0 OR dbo.fn_NormalizeIdentification(@PersonIdentification) NOT LIKE N'%[^0-9]%')
-            )
-            BEGIN
-                ROLLBACK TRAN;
-                SELECT CAST(1001 AS INT) AS result_code, N'PersonIdentification does not satisfy its active natural-person type policy.' AS result_message,
+                SELECT @IdentificationResultCode AS result_code, @IdentificationResultMessage AS result_message,
                        CAST(NULL AS NVARCHAR(20)) AS operation;
                 RETURN;
             END;
@@ -299,8 +267,8 @@ BEGIN
                 @ExistingPersonStatus = p.Status
             FROM dbo.PersonIdentification pi WITH (UPDLOCK, HOLDLOCK)
             INNER JOIN dbo.Person p ON p.PersonId = pi.PersonId
-            WHERE pi.IdentificationTypeId = @PersonIdentificationType
-              AND pi.NormalizedIdentification = dbo.fn_NormalizeIdentification(@PersonIdentification);
+            WHERE pi.IdentificationTypeId = @ValidatedPersonIdentificationTypeId
+              AND pi.NormalizedIdentification = @NormalizedPersonIdentification;
 
             IF @PersonId IS NOT NULL AND @ExistingPersonStatus <> 'A'
             BEGIN
@@ -369,7 +337,7 @@ BEGIN
                 VALUES
                 (
                     @PersonId,
-                    @PersonIdentificationType,
+                    @ValidatedPersonIdentificationTypeId,
                     @PersonIdentification,
                     1
                 );

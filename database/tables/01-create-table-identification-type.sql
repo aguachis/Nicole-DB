@@ -16,7 +16,7 @@ CREATE TABLE dbo.IdentificationType
     AllowsNaturalPerson bit NOT NULL,
     AllowsLegalEntity bit NOT NULL,
     IsBillingAllowed bit NOT NULL,
-    IsActive bit NOT NULL CONSTRAINT DF_IdentificationType_IsActive DEFAULT (1),
+    /* Status = 'A' is the sole availability rule for new captures and billing selection. */
     Status char(1) NOT NULL CONSTRAINT DF_IdentificationType_Status DEFAULT ('A'),
     CreatedAt datetime2(0) NOT NULL CONSTRAINT DF_IdentificationType_CreatedAt DEFAULT (SYSDATETIME()),
     UpdatedAt datetime2(0) NULL,

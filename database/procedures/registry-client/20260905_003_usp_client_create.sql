@@ -29,7 +29,9 @@ BEGIN
             @TypeId CHAR(2),
             @Normalized NVARCHAR(64),
             @ResolvedIdentificationId BIGINT,
-            @ExistingPersonStatus CHAR(1);
+            @ExistingPersonStatus CHAR(1),
+            @IdentificationResultCode INT,
+            @IdentificationResultMessage NVARCHAR(250);
 
     SET @CorrelationId = COALESCE(@CorrelationId, NEWID());
     SET @IdentificationTypeCode = NULLIF(UPPER(LTRIM(RTRIM(@IdentificationTypeCode))), '');
@@ -73,47 +75,19 @@ BEGIN
             RETURN;
         END;
 
-        SELECT @TypeId = IdentificationTypeId
-        FROM dbo.IdentificationType
-        WHERE Code = @IdentificationTypeCode;
+        EXEC dbo.P_Identification_ValidateInput
+            @IdentificationTypeCode = @IdentificationTypeCode,
+            @Identification = @Identification,
+            @PersonKind = @PersonKind,
+            @IdentificationTypeId = @TypeId OUTPUT,
+            @NormalizedIdentification = @Normalized OUTPUT,
+            @ResultCode = @IdentificationResultCode OUTPUT,
+            @ResultMessage = @IdentificationResultMessage OUTPUT;
 
-        IF @TypeId IS NULL
+        IF @IdentificationResultCode <> 0
         BEGIN
-            SELECT CAST(1002 AS INT) AS result_code,
-                   N'Identification type is not supported.' AS result_message,
-                   @CorrelationId AS correlation_id,
-                   CAST(NULL AS NVARCHAR(20)) AS operation;
-            RETURN;
-        END;
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.IdentificationType it
-            WHERE it.IdentificationTypeId = @TypeId
-              AND it.IsActive = 1
-        )
-        BEGIN
-            SELECT CAST(2002 AS INT) AS result_code,
-                   N'Identification type is inactive.' AS result_message,
-                   @CorrelationId AS correlation_id,
-                   CAST(NULL AS NVARCHAR(20)) AS operation;
-            RETURN;
-        END;
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.IdentificationType it
-            WHERE it.IdentificationTypeId = @TypeId
-              AND LEN(@Normalized) BETWEEN it.MinLength AND it.MaxLength
-              AND (it.IsNumericOnly = 0 OR @Normalized NOT LIKE N'%[^0-9]%')
-              AND ((@PersonKind = 'N' AND it.AllowsNaturalPerson = 1)
-                OR (@PersonKind = 'J' AND it.AllowsLegalEntity = 1))
-        )
-        BEGIN
-            SELECT CAST(1001 AS INT) AS result_code,
-                   N'Identification does not satisfy its configured metadata.' AS result_message,
+            SELECT @IdentificationResultCode AS result_code,
+                   @IdentificationResultMessage AS result_message,
                    @CorrelationId AS correlation_id,
                    CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
@@ -202,7 +176,7 @@ BEGIN
             INNER JOIN dbo.IdentificationType it ON it.IdentificationTypeId = pi.IdentificationTypeId
             WHERE pi.PersonIdentificationId = @DefaultBillingIdentificationId
               AND pi.PersonId = @PersonId
-              AND it.IsActive = 1
+              AND it.Status = 'A'
               AND it.IsBillingAllowed = 1
         )
         BEGIN

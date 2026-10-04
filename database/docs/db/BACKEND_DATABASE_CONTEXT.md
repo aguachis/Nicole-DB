@@ -20,6 +20,8 @@ El backend siempre usa `UserId` y `CompanyId` de la sesión. La resolución exig
 
 `P_Client_Create` recibe una persona existente o datos manuales confirmados. En el segundo caso crea `Person`, `PersonIdentification` y `Client` atómicamente. `P_Client_Update` y `P_Client_Deactivate` solo modifican la relación comercial de la empresa activa.
 
+Los contratos de identificación usan `IdentificationType.Code`, no `IdentificationTypeId`. `P_Identification_ValidateInput` aplica en registro, usuarios y clientes una regla única: tipo con `Status = 'A'`, valor normalizado dentro de rango, solo-numérico cuando corresponda y compatible con `PersonKind`. Un tipo inactivo se conserva para historia, pero no se admite para nuevas identidades ni como selección de facturación.
+
 ## Relaciones críticas
 
 - `PersonIdentification` es global y única por tipo más identificación normalizada.

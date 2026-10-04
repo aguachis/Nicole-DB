@@ -13,7 +13,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @TypeId CHAR(2), @Normalized NVARCHAR(64);
+    DECLARE @TypeId CHAR(2),
+            @Normalized NVARCHAR(64),
+            @IdentificationResultCode INT,
+            @IdentificationResultMessage NVARCHAR(250);
 
     SET @CorrelationId = COALESCE(@CorrelationId, NEWID());
     SET @IdentificationTypeCode = UPPER(LTRIM(RTRIM(@IdentificationTypeCode)));
@@ -36,28 +39,19 @@ BEGIN
         RETURN;
     END;
 
-    SELECT @TypeId = IdentificationTypeId
-    FROM dbo.IdentificationType
-    WHERE Code = @IdentificationTypeCode;
+    EXEC dbo.P_Identification_ValidateInput
+        @IdentificationTypeCode = @IdentificationTypeCode,
+        @Identification = @Identification,
+        @PersonKind = NULL,
+        @IdentificationTypeId = @TypeId OUTPUT,
+        @NormalizedIdentification = @Normalized OUTPUT,
+        @ResultCode = @IdentificationResultCode OUTPUT,
+        @ResultMessage = @IdentificationResultMessage OUTPUT;
 
-    IF @TypeId IS NULL
+    IF @IdentificationResultCode <> 0
     BEGIN
-        SELECT CAST(1002 AS INT) AS result_code,
-               N'Identification type is not supported.' AS result_message,
-               @CorrelationId AS correlation_id;
-        RETURN;
-    END;
-
-    IF NOT EXISTS
-    (
-        SELECT 1
-        FROM dbo.IdentificationType
-        WHERE IdentificationTypeId = @TypeId
-          AND IsActive = 1
-    )
-    BEGIN
-        SELECT CAST(2002 AS INT) AS result_code,
-               N'Identification type is inactive.' AS result_message,
+        SELECT @IdentificationResultCode AS result_code,
+               @IdentificationResultMessage AS result_message,
                @CorrelationId AS correlation_id;
         RETURN;
     END;

@@ -1,40 +1,29 @@
-USE [Nicole]
+/* Snapshot aligned with database/tables/01-create-table-identification-type.sql. */
+SET ANSI_NULLS ON;
+GO
+SET QUOTED_IDENTIFIER ON;
 GO
 
-/****** Object:  Table [dbo].[IdentificationType]    Script Date: 19/6/2026 11:40:34 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[IdentificationType](
-	[IdentificationTypeId] [char](2) NOT NULL,
-	[Name] [nvarchar](50) NOT NULL,
-	[Description] [nvarchar](150) NULL,
-	[Status] [char](1) NOT NULL,
-	[CreatedAt] [datetime2](0) NOT NULL,
-	[UpdatedAt] [datetime2](0) NULL,
- CONSTRAINT [PK_IdentificationType] PRIMARY KEY CLUSTERED
+CREATE TABLE dbo.IdentificationType
 (
-	[IdentificationTypeId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
- CONSTRAINT [UQ_IdentificationType_Name] UNIQUE NONCLUSTERED
-(
-	[Name] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-
-ALTER TABLE [dbo].[IdentificationType] ADD  CONSTRAINT [DF_IdentificationType_Status]  DEFAULT ('A') FOR [Status]
-GO
-
-ALTER TABLE [dbo].[IdentificationType] ADD  CONSTRAINT [DF_IdentificationType_CreatedAt]  DEFAULT (sysdatetime()) FOR [CreatedAt]
-GO
-
-ALTER TABLE [dbo].[IdentificationType]  WITH CHECK ADD  CONSTRAINT [FK_IdentificationType_Status] FOREIGN KEY([Status])
-REFERENCES [dbo].[EntityStatus] ([StatusCode])
-GO
-
-ALTER TABLE [dbo].[IdentificationType] CHECK CONSTRAINT [FK_IdentificationType_Status]
+    IdentificationTypeId char(2) NOT NULL,
+    Code varchar(32) NOT NULL,
+    Name nvarchar(50) NOT NULL,
+    Description nvarchar(150) NULL,
+    MinLength tinyint NOT NULL,
+    MaxLength tinyint NOT NULL,
+    IsNumericOnly bit NOT NULL,
+    AllowsNaturalPerson bit NOT NULL,
+    AllowsLegalEntity bit NOT NULL,
+    IsBillingAllowed bit NOT NULL,
+    Status char(1) NOT NULL CONSTRAINT DF_IdentificationType_Status DEFAULT ('A'),
+    CreatedAt datetime2(0) NOT NULL CONSTRAINT DF_IdentificationType_CreatedAt DEFAULT (SYSDATETIME()),
+    UpdatedAt datetime2(0) NULL,
+    CONSTRAINT PK_IdentificationType PRIMARY KEY CLUSTERED (IdentificationTypeId),
+    CONSTRAINT UQ_IdentificationType_Code UNIQUE NONCLUSTERED (Code),
+    CONSTRAINT UQ_IdentificationType_Name UNIQUE NONCLUSTERED (Name),
+    CONSTRAINT CK_IdentificationType_Length CHECK (MinLength > 0 AND MaxLength >= MinLength),
+    CONSTRAINT CK_IdentificationType_Applicability CHECK (AllowsNaturalPerson = 1 OR AllowsLegalEntity = 1),
+    CONSTRAINT FK_IdentificationType_Status FOREIGN KEY (Status) REFERENCES dbo.EntityStatus(StatusCode)
+);
 GO

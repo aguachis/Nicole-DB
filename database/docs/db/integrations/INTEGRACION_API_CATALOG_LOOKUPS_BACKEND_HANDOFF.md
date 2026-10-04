@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Entregar al proyecto backend un resumen ejecutable de correcciones y reglas de adopcion para estandarizar el lookup de catalogos sin romper compatibilidad con consumidores actuales.
+Entregar al proyecto backend un resumen ejecutable de correcciones y reglas de adopcion para estandarizar el lookup de catalogos. El valor de `IDENTIFICATION` cambia deliberadamente de la PK fisica al codigo estable, por lo que requiere actualizacion coordinada de consumidores.
 
 ## Contrato canonico de respuesta
 
@@ -43,7 +43,7 @@ Cada item del catalogo debe usar la misma forma:
 | key | Tabla fuente | value | label | description | status |
 | --- | --- | --- | --- | --- | --- |
 | `STATUS` | `dbo.EntityStatus` | `StatusCode` | `StatusName` | `StatusDescription` | `StatusCode` |
-| `IDENTIFICATION` | `dbo.IdentificationType` | `IdentificationTypeId` | `Name` | `Description` | `Status` |
+| `IDENTIFICATION` | `dbo.IdentificationType` | `Code` | `Name` | `Description` | `Status` |
 | `PERSON_TYPE` | `dbo.PersonType` | `PersonTypeId` | `Name` | `Description` | `Status` |
 
 ## Reglas de activos e includeInactive
@@ -78,6 +78,7 @@ Regla canonica:
 | Campo `sortOrder` | No estandarizado | Opcional | No rompe consumidores |
 | Soporte de claves `STATUS`, `IDENTIFICATION`, `PERSON_TYPE` | Existente | Se mantiene | Sin ruptura |
 | `Permission` dentro de lookup comun | Fuera de alcance | Se mantiene fuera | Sin ruptura |
+| `IDENTIFICATION.value` | `IdentificationTypeId` | `Code` | **Ruptura:** migrar valores enviados, almacenados y seleccionados por UI/API. |
 
 ## Recomendaciones para nuevos catalogos
 
@@ -140,14 +141,14 @@ EXEC dbo.P_Catalog_Lookup
   "key": "IDENTIFICATION",
   "items": [
     {
-      "value": "04",
+      "value": "RUC",
       "label": "RUC",
       "description": "Ruc",
       "status": "A",
       "sortOrder": null
     },
     {
-      "value": "05",
+      "value": "CEDULA",
       "label": "CEDULA",
       "description": "Cedula",
       "status": "A",
@@ -161,4 +162,5 @@ EXEC dbo.P_Catalog_Lookup
 
 - Mantener el contrato actual como base y tratar `sortOrder` como campo opcional.
 - Evitar dependencias de nombre fisico de tabla o PK en frontend.
+- Para `IDENTIFICATION`, adaptar DTOs, valores de formulario y cualquier persistencia de seleccion a `Code` antes de desplegar el bootstrap actualizado.
 - Mantener `Permission` en su contrato separado hasta una decision formal de convergencia.

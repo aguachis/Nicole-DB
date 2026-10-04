@@ -93,23 +93,26 @@ EXEC dbo.P_User_Create
   @CompanyId = @CompanyId,
   @ProfileId = @ProfileId,
   @PersonId = @PersonId, -- opcional cuando se envia bloque de persona
-  @PersonIdentificationType = @PersonIdentificationType,
+  @PersonIdentificationTypeCode = @PersonIdentificationTypeCode,
   @PersonIdentification = @PersonIdentification,
   @PersonFirstName = @PersonFirstName,
   @PersonMiddleName = @PersonMiddleName,
   @PersonLastName = @PersonLastName,
   @PersonPhone = @PersonPhone,
-    @Email = @Email,
-    @PasswordHash = @PasswordHash,
-    @Username = @Username,
-    @CreatedBy = @CreatedBy;
+  @Email = @Email,
+  @PasswordHash = @PasswordHash,
+  @Username = @Username,
+  @CreatedBy = @CreatedBy,
+  @ActorUserId = @ActorUserId,
+  @ActorProfileId = @ActorProfileId;
 ```
 
 Notas para backend:
 - `@CompanyId` y `@ProfileId` son obligatorios; el perfil debe pertenecer a esa empresa.
 - Obtener `@CompanyId` del contexto autenticado del actor, no confiar en un valor de tenant enviado por el cliente.
 - `@PersonId` puede ser `NULL` si se envia identificacion de persona.
-- `@PersonIdentificationType` y `@PersonIdentification` son requeridos cuando `@PersonId` no se envia.
+- `@PersonIdentificationTypeCode` y `@PersonIdentification` son requeridos cuando `@PersonId` no se envia.
+- El codigo debe provenir de `IDENTIFICATION.value`, tener `Status = 'A'` y cumplir la metadata de persona natural; no enviar `IdentificationTypeId`.
 - Si no existe persona por identificacion, `@PersonFirstName` y `@PersonLastName` pasan a ser requeridos para crearla.
 - `@PersonMiddleName` y `@PersonPhone` son opcionales.
 
@@ -222,7 +225,7 @@ public sealed class CreateUserRequest
   public Guid CompanyId { get; set; }
   public Guid ProfileId { get; set; }
   public Guid? PersonId { get; set; }
-  public string? PersonIdentificationType { get; set; }
+  public string? PersonIdentificationTypeCode { get; set; }
   public string? PersonIdentification { get; set; }
   public string? PersonFirstName { get; set; }
   public string? PersonMiddleName { get; set; }
@@ -236,6 +239,7 @@ public sealed class CreateUserRequest
 
 Regla de validacion sugerida:
 - Si `PersonId` es `null`, exigir datos minimos de persona para aprovisionamiento.
+- La API debe traducir `1002` a tipo no soportado, `2002` a tipo inactivo y `1001` a valor de identificacion invalido, sin exponer mensajes SQL al cliente.
 
 ## DTO sugerido - Resumen de usuario en listado
 

@@ -52,6 +52,7 @@ flowchart LR
 
 | Entidad | Clave y relación |
 | --- | --- |
+| `IdentificationType` | Catálogo con `Code` único para contratos y `Status` como única vigencia; mantiene la PK interna `IdentificationTypeId` para FKs. |
 | `Person` | Maestro global; `PersonKind` referencia `PersonType`. |
 | `PersonIdentification` | Única por `(IdentificationTypeId, NormalizedIdentification)`; pertenece a `Person`. |
 | `AppUser` | Pertenece a una sola `Company`; no guarda un perfil directo. |

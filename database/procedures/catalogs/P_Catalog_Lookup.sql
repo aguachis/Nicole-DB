@@ -64,7 +64,7 @@ BEGIN
 
         SELECT
             N'IDENTIFICATION' AS CatalogKey,
-            it.IdentificationTypeId AS [Value],
+            it.Code AS [Value],
             it.Name AS [Label],
             it.Description AS [Description],
             it.Status AS [Status]

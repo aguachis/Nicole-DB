@@ -18,7 +18,7 @@ BEGIN
     END;
     IF NULLIF(LTRIM(RTRIM(@BillingAddress)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(@Phone)),N'') IS NULL OR NULLIF(LTRIM(RTRIM(@Email)),N'') IS NULL OR @Email NOT LIKE N'%_@_%._%'
     BEGIN SELECT CAST(1001 AS int) result_code,N'BillingAddress, Phone, and a syntactically valid Email are required local inputs.' result_message,@CorrelationId correlation_id,CAST(NULL AS nvarchar(20)) operation; RETURN; END;
-    IF NOT EXISTS(SELECT 1 FROM dbo.Client c JOIN dbo.PersonIdentification pi ON pi.PersonIdentificationId=@DefaultBillingIdentificationId AND pi.PersonId=c.PersonId JOIN dbo.IdentificationType it ON it.IdentificationTypeId=pi.IdentificationTypeId WHERE c.ClientId=@ClientId AND c.CompanyId=@CompanyId AND it.IsActive=1 AND it.IsBillingAllowed=1)
+    IF NOT EXISTS(SELECT 1 FROM dbo.Client c JOIN dbo.PersonIdentification pi ON pi.PersonIdentificationId=@DefaultBillingIdentificationId AND pi.PersonId=c.PersonId JOIN dbo.IdentificationType it ON it.IdentificationTypeId=pi.IdentificationTypeId WHERE c.ClientId=@ClientId AND c.CompanyId=@CompanyId AND it.Status='A' AND it.IsBillingAllowed=1)
     BEGIN SELECT CAST(4003 AS int) result_code,N'Default billing identification must belong to the Client Person and be billable.' result_message,@CorrelationId correlation_id,CAST(NULL AS nvarchar(20)) operation; RETURN; END;
     IF NOT EXISTS
     (

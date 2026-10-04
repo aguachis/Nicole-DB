@@ -38,7 +38,7 @@ CREATE OR ALTER PROCEDURE dbo.P_Auth_Register
 (
     @Email NVARCHAR(150),
     @PasswordHash NVARCHAR(500),
-    @PersonIdentificationType CHAR(2),
+    @PersonIdentificationTypeCode VARCHAR(32),
     @PersonIdentification NVARCHAR(20),
     @PersonName NVARCHAR(200),
     @PersonLastName NVARCHAR(80) = NULL,
@@ -61,9 +61,14 @@ BEGIN
     DECLARE @ProfileId UNIQUEIDENTIFIER;
     DECLARE @UserProfileId UNIQUEIDENTIFIER;
     DECLARE @CreatedBy NVARCHAR(80);
+    DECLARE @ValidatedPersonIdentificationTypeId CHAR(2);
+    DECLARE @NormalizedPersonIdentification NVARCHAR(64);
+    DECLARE @IdentificationResultCode INT;
+    DECLARE @IdentificationResultMessage NVARCHAR(250);
 
     SET @Email = LOWER(LTRIM(RTRIM(@Email)));
     SET @Username = NULLIF(LTRIM(RTRIM(@Username)), '');
+    SET @PersonIdentificationTypeCode = NULLIF(UPPER(LTRIM(RTRIM(@PersonIdentificationTypeCode))), '');
     SET @PersonIdentification = LTRIM(RTRIM(@PersonIdentification));
     SET @PersonName = LTRIM(RTRIM(@PersonName));
     SET @PersonLastName = NULLIF(LTRIM(RTRIM(@PersonLastName)), '');
@@ -95,49 +100,29 @@ BEGIN
             RETURN;
         END;
 
-        IF @PersonIdentificationType IS NULL OR LTRIM(RTRIM(@PersonIdentificationType)) = ''
-        BEGIN
-            ROLLBACK TRAN;
-            SELECT CAST(1001 AS INT) AS result_code,
-                   N'PersonIdentificationType is required.' AS result_message,
-                   CAST(NULL AS NVARCHAR(20)) AS operation;
-            RETURN;
-        END;
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.IdentificationType it
-            WHERE it.IdentificationTypeId = @PersonIdentificationType
-        )
-        BEGIN
-            ROLLBACK TRAN;
-            SELECT CAST(1002 AS INT) AS result_code,
-                   N'PersonIdentificationType is not supported.' AS result_message,
-                   CAST(NULL AS NVARCHAR(20)) AS operation;
-            RETURN;
-        END;
-
-        IF NOT EXISTS
-        (
-            SELECT 1
-            FROM dbo.IdentificationType it
-            WHERE it.IdentificationTypeId = @PersonIdentificationType
-              AND it.IsActive = 1
-        )
-        BEGIN
-            ROLLBACK TRAN;
-            SELECT CAST(2002 AS INT) AS result_code,
-                   N'PersonIdentificationType is inactive.' AS result_message,
-                   CAST(NULL AS NVARCHAR(20)) AS operation;
-            RETURN;
-        END;
-
         IF @PersonIdentification IS NULL OR @PersonIdentification = ''
         BEGIN
             ROLLBACK TRAN;
             SELECT CAST(1001 AS INT) AS result_code,
                    N'PersonIdentification is required.' AS result_message,
+                   CAST(NULL AS NVARCHAR(20)) AS operation;
+            RETURN;
+        END;
+
+        EXEC dbo.P_Identification_ValidateInput
+            @IdentificationTypeCode = @PersonIdentificationTypeCode,
+            @Identification = @PersonIdentification,
+            @PersonKind = 'N',
+            @IdentificationTypeId = @ValidatedPersonIdentificationTypeId OUTPUT,
+            @NormalizedIdentification = @NormalizedPersonIdentification OUTPUT,
+            @ResultCode = @IdentificationResultCode OUTPUT,
+            @ResultMessage = @IdentificationResultMessage OUTPUT;
+
+        IF @IdentificationResultCode <> 0
+        BEGIN
+            ROLLBACK TRAN;
+            SELECT @IdentificationResultCode AS result_code,
+                   @IdentificationResultMessage AS result_message,
                    CAST(NULL AS NVARCHAR(20)) AS operation;
             RETURN;
         END;
@@ -197,8 +182,8 @@ BEGIN
 
         SELECT @PersonId = pi.PersonId
         FROM dbo.PersonIdentification pi
-        WHERE pi.IdentificationTypeId = @PersonIdentificationType
-          AND pi.NormalizedIdentification = dbo.fn_NormalizeIdentification(@PersonIdentification);
+        WHERE pi.IdentificationTypeId = @ValidatedPersonIdentificationTypeId
+          AND pi.NormalizedIdentification = @NormalizedPersonIdentification;
 
         IF @PersonId IS NULL
         BEGIN
@@ -234,7 +219,7 @@ BEGIN
             );
 
             INSERT dbo.PersonIdentification(PersonId,IdentificationTypeId,Identification,IsPrimary,CreatedByUserId)
-            VALUES(@PersonId,@PersonIdentificationType,@PersonIdentification,1,NULL);
+            VALUES(@PersonId,@ValidatedPersonIdentificationTypeId,@PersonIdentification,1,NULL);
         END
 
         SET @UserId = NEWID();

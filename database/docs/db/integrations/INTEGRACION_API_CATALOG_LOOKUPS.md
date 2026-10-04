@@ -55,7 +55,8 @@ Campos por item:
 
 Regla de compatibilidad:
 
-- Los campos actuales (`value`, `label`, `description`, `status`) se mantienen sin cambios semanticos.
+- Los campos actuales (`value`, `label`, `description`, `status`) se mantienen.
+- **Cambio incompatible para `IDENTIFICATION`:** `value` ahora es `Code`, no `IdentificationTypeId`. Los consumidores deben enviar y persistir el codigo funcional.
 - `sortOrder` se incorpora como campo opcional y no rompe consumidores existentes.
 
 ## Mapeo funcional por clave
@@ -63,7 +64,7 @@ Regla de compatibilidad:
 | key | Fuente | value | label | description | status |
 | --- | --- | --- | --- | --- | --- |
 | `STATUS` | `dbo.EntityStatus` | `StatusCode` | `StatusName` | `StatusDescription` | `StatusCode` |
-| `IDENTIFICATION` | `dbo.IdentificationType` | `IdentificationTypeId` | `Name` | `Description` | `Status` |
+| `IDENTIFICATION` | `dbo.IdentificationType` | `Code` | `Name` | `Description` | `Status` |
 | `PERSON_TYPE` | `dbo.PersonType` | `PersonTypeId` | `Name` | `Description` | `Status` |
 
 ## Reglas operativas del lookup
@@ -157,14 +158,14 @@ EXEC dbo.P_Catalog_Lookup
   "key": "IDENTIFICATION",
   "items": [
     {
-      "value": "04",
+      "value": "RUC",
       "label": "RUC",
       "description": "Ruc",
       "status": "A",
       "sortOrder": null
     },
     {
-      "value": "05",
+      "value": "CEDULA",
       "label": "CEDULA",
       "description": "Cedula",
       "status": "A",
@@ -198,6 +199,7 @@ RS1 contiene `result_code` y `result_message`. Si la consulta es exitosa, RS2 co
 ## Notas de integracion
 
 - El frontend no debe hardcodear tablas ni identificadores fisicos.
+- Los formularios de registro, usuarios y clientes deben usar el `Code` retornado para `IDENTIFICATION`; no deben reutilizar `IdentificationTypeId`.
 - El backend debe centralizar el mapeo de clave funcional a fuente de verdad.
 - Esta capa es compatible con pantallas que consumen catalogos en formularios de alta o edicion.
 - Si un catalogo nuevo necesita ser expuesto, primero debe existir su entidad y su semilla en base de datos.

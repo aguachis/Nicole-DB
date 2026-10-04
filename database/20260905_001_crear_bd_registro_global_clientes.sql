@@ -18,6 +18,7 @@
 :r database/tables/20-create-table-client.sql
 :r database/seeds/20260905_003_centralizar_registro_global_clientes_permissions.sql
 :r database/procedures/catalogs/P_Catalog_Lookup.sql
+:r database/procedures/identity/P_Identification_ValidateInput.sql
 :r database/procedures/auth/P_Auth_Register.sql
 :r database/procedures/auth/P_Auth_GetSessionContext.sql
 :r database/procedures/auth/P_Auth_Login.sql

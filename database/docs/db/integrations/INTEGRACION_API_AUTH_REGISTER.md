@@ -29,7 +29,7 @@ public sealed class RegisterCompanyRequest
 {
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
-    public string PersonIdentificationType { get; set; } = string.Empty;
+    public string PersonIdentificationTypeCode { get; set; } = string.Empty;
     public string PersonIdentification { get; set; } = string.Empty;
     public string PersonName { get; set; } = string.Empty;
     public string? PersonLastName { get; set; }
@@ -49,7 +49,7 @@ public sealed class RegisterCompanySpParameters
 {
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
-    public string PersonIdentificationType { get; set; } = string.Empty;
+    public string PersonIdentificationTypeCode { get; set; } = string.Empty;
     public string PersonIdentification { get; set; } = string.Empty;
     public string PersonName { get; set; } = string.Empty;
     public string? PersonLastName { get; set; }
@@ -101,7 +101,7 @@ public sealed class ApiError
 {
   "email": "admin@empresa.com",
   "password": "PasswordPlanoSoloParaElBackend",
-  "personIdentificationType": "05",
+  "personIdentificationTypeCode": "CEDULA",
   "personIdentification": "0912345678",
   "personName": "Juan Carlos",
   "personLastName": "Perez",
@@ -120,7 +120,7 @@ Campos obligatorios:
 
 - `email`
 - `password`
-- `personIdentificationType`
+- `personIdentificationTypeCode`
 - `personIdentification`
 - `personName`
 - `companyBusinessName`
@@ -130,10 +130,9 @@ Reglas:
 
 - `email` debe tener formato de correo valido.
 - `password` no debe enviarse al SP; primero debe convertirse en `passwordHash`.
-- `personIdentificationType` debe existir en `dbo.IdentificationType`.
-- `personIdentification` maximo 20 caracteres.
+- `personIdentificationTypeCode` debe ser el `Code` retornado por el lookup `IDENTIFICATION`, existir y tener `Status = 'A'`.
+- `personIdentification` debe cumplir longitud, restriccion numerica y aplicabilidad para persona natural configuradas en `dbo.IdentificationType`.
 - `companyIdentification` maximo 20 caracteres.
-- `personIdentificationType` debe tener 2 caracteres.
 - `establishmentCode` y `emissionPointCode` pueden omitirse; el SP usa `001` si llegan nulos o vacios.
 - `username` es opcional. Si se ejecuta `01-unique-username-filtered.sql`, no se deben aceptar usernames duplicados.
 
@@ -143,7 +142,7 @@ Reglas:
 EXEC dbo.P_Auth_Register
     @Email = @Email,
     @PasswordHash = @PasswordHash,
-    @PersonIdentificationType = @PersonIdentificationType,
+    @PersonIdentificationTypeCode = @PersonIdentificationTypeCode,
     @PersonIdentification = @PersonIdentification,
     @PersonName = @PersonName,
     @PersonLastName = @PersonLastName,
@@ -264,6 +263,8 @@ HTTP `500 Internal Server Error`
 | `201` | N/A | Registro creado correctamente. |
 | `400` | `VALIDATION_REQUIRED_FIELD` | Falta un campo obligatorio. |
 | `400` | `VALIDATION_INVALID_FORMAT` | Formato o longitud invalida. |
+| `400` | `IDENTIFICATION_TYPE_UNSUPPORTED` | El codigo de tipo no existe. |
+| `409` | `IDENTIFICATION_TYPE_INACTIVE` | El tipo existe pero no tiene `Status = 'A'`. |
 | `409` | `AUTH_REGISTER_EMAIL_ALREADY_EXISTS` | El email ya existe en `dbo.AppUser`. |
 | `409` | `AUTH_REGISTER_COMPANY_ALREADY_EXISTS` | La identificacion de empresa ya existe en `dbo.Company`. |
 | `500` | `INTERNAL_SERVER_ERROR` | Error inesperado. |
@@ -322,7 +323,7 @@ Responsabilidades del service:
 export interface RegisterCompanyRequest {
   email: string;
   password: string;
-  personIdentificationType: string;
+  personIdentificationTypeCode: string;
   personIdentification: string;
   personName: string;
   personLastName?: string | null;
@@ -370,3 +371,5 @@ const data = await response.json() as RegisterCompanyResponse;
 ## Nota para Frontend
 
 El frontend debe decidir por HTTP status y `error.code`. No debe depender del texto libre de `message` ni de mensajes internos de SQL Server.
+
+`personIdentificationTypeCode` es un contrato incompatible con la version anterior que recibia el ID fisico de dos caracteres. Debe tomarse del lookup `IDENTIFICATION` y nunca reconstruirse desde una PK.

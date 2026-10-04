@@ -19,7 +19,7 @@ El procedimiento devuelve RS1 con `result_code`, `result_message` y `correlation
 
 - `0`: existe una persona global; RS2 permite al usuario confirmar el alta de cliente.
 - `2001`: no existe una identidad global. El backend puede consultar el servicio de cédula o RUC y devolver solo una sugerencia editable de nombre/razón social.
-- `1001`/`1002`/`2002`/`3001`: entrada inválida, tipo de identificación no soportado, tipo inactivo o autorización denegada; se manejan según el contrato global y nunca inician una consulta externa.
+- `1001`/`1002`/`2002`/`3001`: entrada inválida frente a longitud, formato o clase de persona; tipo de identificación no soportado; tipo inactivo; o autorización denegada. Se manejan según el contrato global y nunca inician una consulta externa.
 
 La consulta externa se ejecuta únicamente en el backend. No se guarda en SQL su JSON, UUID, resultado, error, timeout, proveedor, fecha, vigencia ni datos tributarios. Si el servicio no responde, no encuentra información o no devuelve nombre útil, el formulario manual permanece disponible.
 
@@ -32,6 +32,8 @@ La consulta externa se ejecuta únicamente en el backend. No se guarda en SQL su
 | `POST /api/clients/{clientId}/deactivate` | `P_Client_Deactivate` | Ninguna entrada adicional. |
 
 Para una persona existente, el backend envía `PersonId` y `DefaultBillingIdentificationId`. Para una identidad inexistente, envía `PersonId = NULL`, `identificationTypeCode`, `identification`, `personKind`, `legalName` y `tradeName` opcional. El procedimiento crea la persona, su identificación y el cliente en una transacción; si otra empresa creó la misma identificación en paralelo, reutiliza la identidad global sin sobrescribirla.
+
+`identificationTypeCode` debe ser el `Code` del lookup y el procedimiento aplica la misma política que registro y usuarios: tipo con `Status = 'A'`, longitud, regla solo-numérica y compatibilidad con `personKind`. Una identificación histórica cuyo tipo quede inactivo puede conservarse para consulta, pero no puede seleccionarse como identificación facturable ni usarse para una captura nueva.
 
 Dirección, correo y teléfono siempre se confirman como valores de `Client` del tenant del usuario autenticado. Una sugerencia externa nunca se persiste automáticamente.
 
